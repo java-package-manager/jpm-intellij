@@ -45,4 +45,14 @@ class JpmConfigurable : BoundConfigurable("jpm") {
             }
         }
     }
+
+    override fun apply() {
+        val before = JpmSettings.get().state.jpmPath
+        super.apply()
+        if (JpmSettings.get().state.jpmPath != before) {
+            // another jpm may have another schema
+            JpmSchemaProvider.forget()
+            com.intellij.openapi.application.ApplicationManager.getApplication().executeOnPooledThread { JpmSchemaProvider.update() }
+        }
+    }
 }

@@ -15,9 +15,10 @@ up: open a folder with a `project.jsonc` and it is ready to code in, with nothin
 - **JDK, automatically.** Each module gets the JDK jpm builds it with, registered in IntelliJ when it is not
   yet, and its language level from `"target"`. A JDK the project asks for that is not installed is
   installed by jpm, as on the command line.
-- **Editing `project.jsonc`.** Completion, documentation and validation from jpm's JSON Schema, bundled
-  with the plugin so it works offline and without a `"$schema"` line: unknown fields, wrong dependency
-  keys, misspelled options and invalid values are underlined as you type.
+- **Editing `project.jsonc`.** Completion, documentation and validation from the JSON Schema of the jpm you
+  have installed, so the editor knows exactly the fields that jpm reads, offline and without a `"$schema"`
+  line: unknown fields, wrong dependency keys, misspelled options and invalid values are underlined as you
+  type.
 - **Nested projects.** Every jpm project in the opened folder is loaded: the folder's own, projects nested
   inside it (test fixtures, examples), and projects in subfolders of a folder that is not one (a monorepo, a
   backend next to a frontend). A workspace's modules load with their workspace. Each project gets its own
@@ -60,6 +61,8 @@ and search for **jpm** on the Marketplace tab. Each release's zip can also be in
 ## Requirements
 
 jpm 0.5.0 or newer (for `jpm info --ide`), installed in `~/.jpm/bin` by the jpm install script or on `PATH`.
+Editing `project.jsonc` with its schema needs a jpm with `jpm schema` (newer than 0.7.2); with an older one
+the schema comes only from a manifest's `"$schema"` line.
 Another location can be set in **Settings | Build, Execution, Deployment | Build Tools | jpm**, which also
 turns automatic reload off.
 
@@ -72,9 +75,10 @@ the configured modules and writes to `.cache/idea/`, apart from jpm's output.
 
 ## The schema
 
-`src/main/resources/schemas/project.schema.json` is a copy of jpm's
-[`schema/project.schema.json`](https://github.com/java-package-manager/jpm/blob/main/schema/project.schema.json). CI
-warns when it differs from the schema of jpm's latest release; copy it over when jpm's changes.
+The plugin does not bundle jpm's schema. It runs `jpm schema --path`, which writes the schema built into
+that jpm to `~/.jpm/schemas/<version>/project.schema.json` and prints the path, and serves that file for every
+`project.jsonc` (also for manifests whose `"$schema"` names jpm's published schema). jpm is asked again when
+the project reloads after jpm was upgraded, or when its path changes in the settings.
 
 ## Building
 

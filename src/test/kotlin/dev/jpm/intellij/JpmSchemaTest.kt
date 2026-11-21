@@ -1,23 +1,48 @@
 package dev.jpm.intellij
 
 import com.intellij.lang.annotation.HighlightSeverity
+import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.jetbrains.jsonSchema.ide.JsonSchemaService
 import com.jetbrains.jsonSchema.impl.inspections.JsonSchemaComplianceInspection
+import java.nio.file.Files
+import java.nio.file.Path
 
+/**
+ * The schema comes from the installed jpm (`jpm schema --path`); here a small stand-in is served the same
+ * way. What the schema says is jpm's business and tested there.
+ */
 class JpmSchemaTest : BasePlatformTestCase() {
+    private lateinit var dir: Path
+
     override fun setUp() {
         super.setUp()
-        // The bundled schema is read from the plugin's jar, outside the test project.
-        val jar = com.intellij.util.PathUtil.getJarPathForClass(JpmSchemaProvider::class.java)
-        com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess.allowRootAccess(testRootDisposable, jar)
+        dir = Files.createTempDirectory("jpm-schema")
+        VfsRootAccess.allowRootAccess(testRootDisposable, dir.toString())
+        val schema = dir.resolve("schemas/1.0.0/project.schema.json")
+        Files.createDirectories(schema.parent)
+        Files.writeString(schema, SCHEMA)
+        JpmSchemaProvider.use(JpmSchemaProvider.parsePath("$schema\n"))
+        JsonSchemaService.Impl.get(project).reset()
         myFixture.enableInspections(JsonSchemaComplianceInspection())
     }
 
-    fun testProjectJsoncUsesTheBundledSchema() {
+    override fun tearDown() {
+        try {
+            JpmSchemaProvider.use(null)
+            JpmSchemaProvider.forget()
+            dir.toFile().deleteRecursively()
+        } catch (e: Throwable) {
+            addSuppressedException(e)
+        } finally {
+            super.tearDown()
+        }
+    }
+
+    fun testProjectJsoncUsesJpmsSchema() {
         val file = myFixture.configureByText(Jpm.MANIFEST, """{ "name": "demo" }""").virtualFile
         val schemas = JsonSchemaService.Impl.get(project).getSchemaFilesForFile(file)
-        assertTrue("schema for project.jsonc: $schemas", schemas.any { it.name == "project.schema.json" })
+        assertTrue("schema for project.jsonc: $schemas", schemas.any { it.path.endsWith("schemas/1.0.0/project.schema.json") })
     }
 
     fun testValidManifestHasNoWarnings() {
@@ -25,42 +50,63 @@ class JpmSchemaTest : BasePlatformTestCase() {
             // comments are fine in project.jsonc
             {
               "name": "demo",
-              "version": "1.0.0",
               "java": "21",
-              "main": "demo.App",
-              "runtime": { "org.slf4j:slf4j-api": "2.0.16", "workspace:core": "*" },
-              "test": { "org.junit.jupiter:junit-jupiter": { "version": "5.11.4" } },
-              "hooks": { "postbuild:release": "upload" },
+              "runtime": { "org.slf4j:slf4j-api": "2.0.16" },
             }
         """.trimIndent())
-        val warnings = myFixture.doHighlighting(HighlightSeverity.WARNING)
-        assertEmpty(warnings.map { it.description })
+        assertEmpty(myFixture.doHighlighting(HighlightSeverity.WARNING).map { it.description })
     }
 
     fun testMistakesAreFlagged() {
-        myFixture.configureByText(Jpm.MANIFEST, """
-            {
-              "name": "demo",
-              "dependencies": {},
-              "layout": "ant",
-              "runtime": { "a:b": { "version": "1", "optional": true } }
-            }
-        """.trimIndent())
+        myFixture.configureByText(Jpm.MANIFEST, """{ "name": "demo", "dependencies": {} }""")
         val warnings = myFixture.doHighlighting(HighlightSeverity.WARNING).map { it.description.orEmpty() }
         assertTrue(warnings.toString(), warnings.any { "dependencies" in it })
-        assertTrue(warnings.toString(), warnings.any { "ant" in it || "jpm" in it })
     }
 
     fun testCompletesFields() {
         myFixture.configureByText(Jpm.MANIFEST, """{ "name": "demo", "<caret>" }""")
         myFixture.completeBasic()
-        val items = myFixture.lookupElementStrings.orEmpty()
-        assertContainsElements(items, "runtime", "java", "workspace", "extensions")
+        assertContainsElements(myFixture.lookupElementStrings.orEmpty(), "runtime", "java")
     }
 
     fun testOtherJsonFilesAreLeftAlone() {
         val file = myFixture.configureByText("other.jsonc", """{ "anything": 1 }""").virtualFile
         val schemas = JsonSchemaService.Impl.get(project).getSchemaFilesForFile(file)
         assertFalse(schemas.any { it.name == "project.schema.json" })
+    }
+
+    fun testWithoutJpmThereIsNoSchema() {
+        JpmSchemaProvider.use(null)
+        JsonSchemaService.Impl.get(project).reset()
+        val file = myFixture.configureByText(Jpm.MANIFEST, """{ "name": "demo" }""").virtualFile
+        assertFalse(JsonSchemaService.Impl.get(project).getSchemaFilesForFile(file).any { it.name == "project.schema.json" })
+        assertNull(JpmSchemaProvider.remoteSource)
+    }
+
+    fun testReadsThePathJpmPrints() {
+        val schema = dir.resolve("schemas/1.0.0/project.schema.json")
+        assertEquals(schema, JpmSchemaProvider.parsePath("$schema\n"))
+        assertEquals(schema, JpmSchemaProvider.parsePath("some notice\n$schema\n\n"))
+        assertNull(JpmSchemaProvider.parsePath(""))
+        assertNull(JpmSchemaProvider.parsePath("relative/project.schema.json"))
+        assertNull(JpmSchemaProvider.parsePath(dir.resolve("missing.json").toString()))
+    }
+
+
+    companion object {
+        private val SCHEMA = """
+            {
+              "${'$'}schema": "http://json-schema.org/draft-07/schema#",
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name"],
+              "properties": {
+                "${'$'}schema": { "type": "string" },
+                "name": { "type": "string" },
+                "java": { "type": "string" },
+                "runtime": { "type": "object", "additionalProperties": { "type": "string" } }
+              }
+            }
+        """.trimIndent()
     }
 }

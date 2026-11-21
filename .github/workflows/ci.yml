@@ -45,15 +45,6 @@ jobs:
           java-version: "21"
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Compare the bundled schema with jpm's
-        run: |
-          if curl -fsSL https://github.com/java-package-manager/jpm/releases/latest/download/project.schema.json -o "$RUNNER_TEMP/schema.json"; then
-            diff -u "$RUNNER_TEMP/schema.json" src/main/resources/schemas/project.schema.json \
-              || echo "::warning::src/main/resources/schemas/project.schema.json differs from the schema of jpm's latest release"
-          else
-            echo "::warning::jpm's latest release has no project.schema.json yet"
-          fi
-
       - name: Test and build the plugin
         run: ./gradlew test buildPlugin
 

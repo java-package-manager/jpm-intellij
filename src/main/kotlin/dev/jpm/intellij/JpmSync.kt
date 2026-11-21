@@ -84,6 +84,8 @@ class JpmSync(private val project: Project) : Disposable {
         object : Task.Backgroundable(project, "Loading jpm project", true) {
             override fun run(indicator: ProgressIndicator) {
                 this@JpmSync.indicator = indicator
+                // the schema of project.jsonc comes from the jpm that loads the project
+                JpmSchemaProvider.update()
                 val roots = roots()
                 val loaded = collectInfos(roots, previous) { dir ->
                     indicator.checkCanceled()
