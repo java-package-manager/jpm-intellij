@@ -46,7 +46,7 @@ jobs:
         with:
           version: canary
           java: "21"
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: No comments in the sources
         run: java checks/Comments.java check src
@@ -134,7 +134,7 @@ jobs:
         if: env.JETBRAINS_MARKETPLACE_TOKEN != ''
         with:
           java: "21"
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@v6
         if: env.JETBRAINS_MARKETPLACE_TOKEN != ''
       - name: Publish to the JetBrains Marketplace
         if: env.JETBRAINS_MARKETPLACE_TOKEN != ''
