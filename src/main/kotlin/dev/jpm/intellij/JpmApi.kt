@@ -53,8 +53,18 @@ object JpmApi {
         } catch (e: JpmError) {
             throw JpmSync.LoadException(describe(e))
         }
-        info(project, classpaths, client.jpmVersion())
+        val extensions = if (client.supports("extensions/list")) {
+            try {
+                client.extensions(dir)
+            } catch (e: JpmError) {
+                throw JpmSync.LoadException(describe(e))
+            }
+        } else emptyList()
+        info(project, classpaths, client.jpmVersion()).apply { extensionList = extensions.map(::extension) }
     }
+
+    fun extension(e: dev.jpm.api.model.Extension) = JpmExtensionInfo(e.name(), e.source(), e.version(), e.description(),
+        e.commands().map { JpmExtensionCommand(it.name(), it.description()) })
 
     /** The JSON Schema of project.jsonc that the installed jpm reads, as JSON text. */
     fun manifestSchema(dir: Path): String = connect(dir) { client -> dev.jpm.api.json.Jsonc.write(client.manifestSchema()) }

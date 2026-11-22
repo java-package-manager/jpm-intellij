@@ -33,37 +33,46 @@ class JpmTasksTest {
 
     private fun labels(info: JpmProjectInfo) = JpmTasks.forProject(info).flatMap { it.tasks }.map { it.label }
 
-    private fun repos(vararg names: String): Map<String, Any?> = mapOf("publish" to mapOf("repositories" to names.associateWith { mapOf<String, Any>() }))
 
     @Test
     fun aBareProjectOffersOnlyWhatRuns() {
         val info = project(false, module("lib", "/p"))
-        assertEquals(listOf("build", "clean", "build --release", "build --bundle", "install", "update", "outdated", "publish --local"), labels(info))
+        assertEquals(listOf("build", "clean", "build --release", "build --bundle", "install", "update", "outdated"), labels(info))
     }
 
     @Test
-    fun testsMainAndPublishingAddTheirTasks() {
-        val info = project(false, module("app", "/p", main = mapOf("main" to "a.App"), tests = true, extensions = repos("central")))
-        val all = labels(info)
+    fun testsAndMainAddTheirTasks() {
+        val info = project(false, module("app", "/p", main = mapOf("main" to "a.App"), tests = true))
         assertEquals(listOf("build", "test", "start", "dev", "clean", "build --release", "build --bundle", "build --native",
-            "install", "update", "outdated", "publish", "publish --local"), all)
-        val publish = JpmTasks.forProject(info).flatMap { it.tasks }.single { it.label == "publish" }
-        assertEquals("to central", publish.hint)
+            "install", "update", "outdated"), labels(info))
     }
 
     @Test
-    fun severalEntryPointsAndSeveralRepositories() {
-        val info = project(false, module("app", "/p", main = mapOf("cli" to "a.Cli", "server" to "a.Server")), extensions = repos("releases", "central"))
+    fun severalEntryPoints() {
+        val info = project(false, module("app", "/p", main = mapOf("cli" to "a.Cli", "server" to "a.Server")))
         val all = labels(info)
-        assertTrue(all.containsAll(listOf("start cli", "dev cli", "start server", "dev server", "publish releases", "publish central")))
-        assertFalse(all.contains("start") || all.contains("publish"))
+        assertTrue(all.containsAll(listOf("start cli", "dev cli", "start server", "dev server")))
+        assertFalse(all.contains("start"))
+    }
+
+    @Test
+    fun extensionsBringTheCommandsTheirManifestsDescribe() {
+        val info = project(false, module("lib", "/p"))
+        info.extensionList = listOf(
+            JpmExtensionInfo("publish", "project", "0.3.0", "Publish", listOf(JpmExtensionCommand("publish", "to a Maven repository"))),
+            JpmExtensionInfo("format", "global", "0.2.0", null, listOf(JpmExtensionCommand("format", null), JpmExtensionCommand("format rules", "list them"))))
+        val groups = JpmTasks.forProject(info).filter { it.name.startsWith("jpm-") }
+        assertEquals(listOf("jpm-publish", "jpm-format (global)"), groups.map { it.name })
+        assertEquals("to a Maven repository", groups[0].tasks.single().hint)
+        assertEquals(listOf("format", "rules"), groups[1].tasks.single { it.label == "format rules" }.args)
+        assertTrue(groups.flatMap { it.tasks }.all { it.dir == Path.of("/p") })
     }
 
     @Test
     fun workspaceModulesGetTheirOwnTasks() {
-        val api = module("api", "/p/api", extensions = mapOf("publish" to mapOf("skip" to true)))
+        val api = module("api", "/p/api")
         val app = module("app", "/p/app", main = mapOf("main" to "a.App"), tests = true, scripts = listOf("gen"))
-        val info = project(true, api, app, extensions = repos("central"))
+        val info = project(true, api, app)
 
         val start = JpmTasks.forProject(info).flatMap { it.tasks }.single { it.label == "start" }
         assertEquals(Path.of("/p/app"), start.dir)
@@ -71,10 +80,8 @@ class JpmTasksTest {
 
         assertEquals(listOf("build", "build --bundle"), JpmTasks.forModule(info, api).map { it.label })
         val appTasks = JpmTasks.forModule(info, app)
-        assertEquals(listOf("build", "test", "start", "dev", "build --bundle", "build --native", "publish", "publish --local", "run gen"),
-            appTasks.map { it.label })
-        assertTrue(appTasks.filter { !it.label.startsWith("publish") }.all { it.dir == Path.of("/p/app") })
-        assertEquals(listOf("publish", "--module", "app"), appTasks.single { it.label == "publish" }.args)
+        assertEquals(listOf("build", "test", "start", "dev", "build --bundle", "build --native", "run gen"), appTasks.map { it.label })
+        assertTrue(appTasks.all { it.dir == Path.of("/p/app") })
     }
 
     @Test

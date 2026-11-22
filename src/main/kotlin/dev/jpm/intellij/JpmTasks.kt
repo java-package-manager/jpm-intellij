@@ -9,8 +9,8 @@ data class JpmTaskGroup(val name: String, val tasks: List<JpmTask>)
 
 /**
  * The commands that can actually run for a project or module: no test task without tests, no start, dev
- * or native build without a main (a bundle without one is a flat jar, as plugins need), and publishing to repositories only when they are configured
- * ("publish --local" needs none).
+ * or native build without a main (a bundle without one is a flat jar, as plugins need), and the commands of
+ * the extensions the project can run, as their manifests describe them (jpm's extensions/list).
  */
 object JpmTasks {
     /** The tasks of a whole jpm project (in a workspace: of every module, run from its root). */
@@ -39,8 +39,10 @@ object JpmTasks {
             JpmTask("outdated", listOf("outdated"), "show newer versions", dir),
         )))
 
-        val repos = (repositories(info.extensions) + info.modules.flatMap { repositories(it.extensions) }).distinct()
-        groups.add(JpmTaskGroup("Publishing", publishTasks(repos, null, dir)))
+        for (e in info.extensionList) {
+            val tasks = e.commands.map { c -> JpmTask(c.name, c.name.split(" ").filter { it.isNotEmpty() }, c.description, dir) }
+            if (tasks.isNotEmpty()) groups.add(JpmTaskGroup("jpm-${e.name}" + if (e.source == "global") " (global)" else "", tasks))
+        }
 
         val scripts = if (info.workspace) info.scripts.orEmpty() else (info.scripts.orEmpty() + info.modules.flatMap { it.scripts.orEmpty() }).distinct()
         if (scripts.isNotEmpty()) groups.add(JpmTaskGroup("Scripts", scripts.map { JpmTask(it, listOf("run", it), "jpm run $it", dir) }))
@@ -56,11 +58,6 @@ object JpmTasks {
         if (!m.main.isNullOrEmpty()) out.addAll(runTasks(m, dir))
         out.add(JpmTask("build --bundle", listOf("build", "--bundle"), if (m.main.isNullOrEmpty()) "flat jar with the runtime dependencies" else null, dir))
         if (!m.main.isNullOrEmpty()) out.add(JpmTask("build --native", listOf("build", "--native"), null, dir))
-        val skip = (m.extensions?.get("publish") as? Map<*, *>)?.get("skip") == true
-        if (!skip) {
-            val repos = (repositories(info.extensions) + repositories(m.extensions)).distinct()
-            out.addAll(publishTasks(repos, m.name, Path.of(info.projectDir)))
-        }
         for (s in m.scripts.orEmpty()) out.add(JpmTask("run $s", listOf("run", s), null, dir))
         return out
     }
@@ -79,25 +76,5 @@ object JpmTasks {
             }
         }
         return out
-    }
-
-    /** `jpm publish` with one repository, `jpm publish <name>` with several, and always --local. */
-    private fun publishTasks(repos: List<String>, module: String?, dir: Path): List<JpmTask> {
-        val only = if (module == null) emptyList() else listOf("--module", module)
-        val out = ArrayList<JpmTask>()
-        when (repos.size) {
-            0 -> {}
-            1 -> out.add(JpmTask("publish", listOf("publish") + only, "to ${repos[0]}", dir))
-            else -> repos.forEach { r -> out.add(JpmTask("publish $r", listOf("publish", r) + only, null, dir)) }
-        }
-        out.add(JpmTask("publish --local", listOf("publish", "--local") + only, "to ~/.m2/repository", dir))
-        return out
-    }
-
-    /** The repository names of a "publish" extension configuration. */
-    private fun repositories(extensions: Map<String, Any?>?): List<String> {
-        val publish = extensions?.get("publish") as? Map<*, *> ?: return emptyList()
-        val repos = publish["repositories"] as? Map<*, *> ?: return emptyList()
-        return repos.keys.map { it.toString() }
     }
 }

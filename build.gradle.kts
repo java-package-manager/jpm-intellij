@@ -22,7 +22,7 @@ repositories {
 }
 
 dependencies {
-    implementation("dev.jpm:jpm-api:0.11.0-20261122.163616-1")
+    implementation("dev.jpm:jpm-api:0.11.0-20261122.190804-3")
     intellijPlatform {
         intellijIdea("2026.1.5.1")
         bundledPlugin("com.intellij.java")

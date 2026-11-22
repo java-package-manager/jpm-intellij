@@ -11,7 +11,16 @@ class JpmProjectInfo {
     /** Settings of jpm extensions by name, as in the root project.jsonc (e.g. "publish"). */
     var extensions: Map<String, Any?>? = null
     var modules: List<JpmModuleInfo> = emptyList()
+    /** The extensions this project can run: the ones it declares, then the global ones (jpm's extensions/list). */
+    var extensionList: List<JpmExtensionInfo> = emptyList()
 }
+
+/** An extension and the commands its manifest describes. */
+class JpmExtensionInfo(val name: String, val source: String, val version: String?, val description: String?,
+                       val commands: List<JpmExtensionCommand>)
+
+/** A command of an extension: [name] is what follows `jpm`, such as `publish` or `format check`. */
+class JpmExtensionCommand(val name: String, val description: String?)
 
 class JpmModuleInfo {
     var name: String = ""
