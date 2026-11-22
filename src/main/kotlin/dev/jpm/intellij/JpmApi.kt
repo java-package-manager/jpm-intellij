@@ -1,7 +1,5 @@
 package dev.jpm.intellij
 
-import com.intellij.ide.plugins.PluginManagerCore
-import com.intellij.openapi.extensions.PluginId
 import dev.jpm.api.client.JpmClient
 import dev.jpm.api.client.JpmError
 import dev.jpm.api.client.JpmNotInstalled
@@ -20,12 +18,16 @@ object JpmApi {
     /** The oldest jpm that serves the protocol. */
     const val MIN_JPM = "0.12.0"
 
-    private fun pluginVersion(): String = PluginManagerCore.getPlugin(PluginId.getId("dev.jpm"))?.version ?: "unknown"
+    /** This plugin's version, from the plugin.xml the build stamps it into (the platform's lookups are internal API). */
+    private val pluginVersion: String by lazy {
+        val xml = JpmApi::class.java.getResourceAsStream("/META-INF/plugin.xml")?.use { String(it.readAllBytes(), Charsets.UTF_8) }.orEmpty()
+        Regex("<version>\\s*([^<\\s]+)\\s*</version>").find(xml)?.groupValues?.get(1) ?: "unknown"
+    }
 
     private fun <T> connect(dir: Path, block: (JpmClient) -> T): T {
         val exe = Jpm.executable() ?: throw JpmNotFoundException()
         val client = try {
-            JpmClient.start(listOf(exe.toString(), "api"), dir, mapOf("JPM_COLOR" to "0"), "jpm-intellij", pluginVersion())
+            JpmClient.start(listOf(exe.toString(), "api"), dir, mapOf("JPM_COLOR" to "0"), "jpm-intellij", pluginVersion)
         } catch (e: JpmNotInstalled) {
             throw JpmNotFoundException()
         } catch (e: ProtocolMismatch) {
