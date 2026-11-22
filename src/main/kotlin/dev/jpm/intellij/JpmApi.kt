@@ -15,9 +15,6 @@ import java.nio.file.Path
  * plugin's model. A connection lives for one call: jpm reads the project afresh every time.
  */
 object JpmApi {
-    /** The oldest jpm that serves the protocol. */
-    const val MIN_JPM = "0.12.0"
-
     /** This plugin's version, from the plugin.xml the build stamps it into (the platform's lookups are internal API). */
     private val pluginVersion: String by lazy {
         val xml = JpmApi::class.java.getResourceAsStream("/META-INF/plugin.xml")?.use { String(it.readAllBytes(), Charsets.UTF_8) }.orEmpty()
@@ -33,13 +30,11 @@ object JpmApi {
         } catch (e: ProtocolMismatch) {
             throw JpmSync.LoadException(e.message ?: "jpm speaks another protocol version")
         } catch (e: JpmError) {
-            throw JpmSync.LoadException(tooOld(exe))
+            throw JpmSync.LoadException("jpm api failed: " + e.message)
         }
         return client.use(block)
     }
 
-    private fun tooOld(exe: Path) = "The jpm at $exe does not serve the jpm protocol; the jpm plugin needs jpm $MIN_JPM or newer. " +
-        "Update it with `jpm upgrade`."
 
     /** The project at [dir], with its classpaths, as the plugin's model. */
     fun load(dir: Path): JpmProjectInfo = connect(dir) { client ->
@@ -53,13 +48,11 @@ object JpmApi {
         } catch (e: JpmError) {
             throw JpmSync.LoadException(describe(e))
         }
-        val extensions = if (client.supports("extensions/list")) {
-            try {
-                client.extensions(dir)
-            } catch (e: JpmError) {
-                throw JpmSync.LoadException(describe(e))
-            }
-        } else emptyList()
+        val extensions = try {
+            client.extensions(dir)
+        } catch (e: JpmError) {
+            throw JpmSync.LoadException(describe(e))
+        }
         info(project, classpaths, client.jpmVersion()).apply { extensionList = extensions.map(::extension) }
     }
 

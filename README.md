@@ -61,7 +61,7 @@ and search for **jpm** on the Marketplace tab. Each release's zip can also be in
 ## Requirements
 
 jpm 0.12.0 or newer (for the jpm protocol, `jpm api`), installed in `~/.jpm/bin` by the jpm install script or
-on `PATH`. Without jpm, the plugin offers to install it; with an older one, to upgrade it.
+on `PATH`. Without jpm, the plugin offers to install it.
 Another location can be set in **Settings | Build, Execution, Deployment | Build Tools | jpm**, which also
 turns automatic reload off.
 

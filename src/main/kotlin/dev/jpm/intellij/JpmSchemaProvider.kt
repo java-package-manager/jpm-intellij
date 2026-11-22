@@ -18,8 +18,8 @@ import java.nio.file.Path
  * Completion, documentation and validation for every project.jsonc, from the schema of the jpm that is
  * installed: the plugin asks it over the jpm protocol (schema/manifest) and keeps the answer in the IDE's
  * system folder, so the editor describes exactly the manifests that jpm reads, offline. Manifests whose
- * "$schema" names jpm's published schema get the local one too, so nothing is downloaded. Without jpm (or
- * with one too old for the protocol) the plugin offers no schema of its own.
+ * "$schema" names jpm's published schema get the local one too, so nothing is downloaded. Without jpm the
+ * plugin offers no schema of its own.
  */
 class JpmSchemaProviderFactory : JsonSchemaProviderFactory, DumbAware {
     override fun getProviders(project: Project): List<JsonSchemaFileProvider> = listOf(JpmSchemaProvider)

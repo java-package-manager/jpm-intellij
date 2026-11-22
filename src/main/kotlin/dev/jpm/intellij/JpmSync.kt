@@ -148,8 +148,6 @@ class JpmSync(private val project: Project) : Disposable {
                 NotificationAction.createSimple("Settings") {
                     ShowSettingsUtil.getInstance().showSettingsDialog(project, JpmConfigurable::class.java)
                 })
-        } else if (message.contains(JpmApi.MIN_JPM)) {
-            listOf(NotificationAction.createSimpleExpiring("Upgrade jpm") { JpmInstaller.upgrade(project) { reload() } })
         } else {
             listOf(NotificationAction.createSimple("Reload") { reload() })
         }

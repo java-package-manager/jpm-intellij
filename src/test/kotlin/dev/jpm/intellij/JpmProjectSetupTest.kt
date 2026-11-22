@@ -208,25 +208,4 @@ class JpmProjectSetupTest : HeavyPlatformTestCase() {
             super.tearDown()
         }
     }
-
-    fun testExplainsAJpmWithoutTheProtocol() {
-        if (com.intellij.openapi.util.SystemInfo.isWindows) return
-        val old = Files.createTempFile("old-jpm", "")
-        old.writeText("#!/bin/sh\necho 'error: Unknown command \"api\"' >&2\nexit 1\n")
-        old.toFile().setExecutable(true)
-        JpmSettings.get().state.jpmPath = old.toString()
-        try {
-            val message = try {
-                JpmApi.load(dir)
-                fail("a jpm without `jpm api` loaded the project")
-                ""
-            } catch (e: JpmSync.LoadException) {
-                e.message.orEmpty()
-            }
-            assertTrue(message, message.contains("needs jpm ${JpmApi.MIN_JPM} or newer"))
-        } finally {
-            JpmSettings.get().state.jpmPath = null
-            Files.deleteIfExists(old)
-        }
-    }
 }

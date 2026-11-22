@@ -13,16 +13,15 @@ version = providers.gradleProperty("pluginVersion").get()
 
 repositories {
     mavenCentral()
-    // dev.jpm:jpm-api, jpm's client: releases, and snapshots of jpm's main branch until jpm 0.12.0
+    // dev.jpm:jpm-api, jpm's client
     maven("https://repo.thenextlvl.net/releases")
-    maven("https://repo.thenextlvl.net/snapshots")
     intellijPlatform {
         defaultRepositories()
     }
 }
 
 dependencies {
-    implementation("dev.jpm:jpm-api:0.11.0-20261122.190804-3")
+    implementation("dev.jpm:jpm-api:0.12.0")
     intellijPlatform {
         intellijIdea("2026.1.5.1")
         bundledPlugin("com.intellij.java")

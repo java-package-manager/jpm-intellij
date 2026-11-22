@@ -10,7 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
 import java.nio.charset.StandardCharsets
 
-/** Installs or upgrades jpm for the user, with jpm's own install script or `jpm upgrade`. */
+/** Installs jpm for the user with jpm's own install script. */
 object JpmInstaller {
     private const val BASE = "https://github.com/java-package-manager/jpm/releases/latest/download"
 
@@ -20,11 +20,6 @@ object JpmInstaller {
         else GeneralCommandLine("sh", "-c", "curl -fsSL $BASE/install.sh | sh")
 
     fun install(project: Project, then: () -> Unit) = run(project, "Installing jpm", installCommand(), then)
-
-    fun upgrade(project: Project, then: () -> Unit) {
-        val exe = Jpm.executable() ?: return install(project, then)
-        run(project, "Upgrading jpm", GeneralCommandLine(exe.toString(), "upgrade"), then)
-    }
 
     private fun run(project: Project, title: String, cmd: GeneralCommandLine, then: () -> Unit) {
         object : Task.Backgroundable(project, title, true) {
