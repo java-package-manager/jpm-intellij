@@ -29,7 +29,6 @@ class JpmUnloaderTest : BasePlatformTestCase() {
         assertEmpty(NotificationsManager.getNotificationsManager().getNotificationsOfType(Notification::class.java, project)
             .filter { it.groupId == "jpm" && !it.isExpired })
 
-        // the project service no longer loads anything
         JpmSync.get(project).reload()
         assertFalse(JpmSync.get(project).loading)
         runManager.removeConfiguration(saved)

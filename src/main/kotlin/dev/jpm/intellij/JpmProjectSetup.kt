@@ -55,7 +55,6 @@ object JpmProjectSetup {
         val sdks = HashMap<String, Sdk>()
         fun sdkFor(m: JpmModuleInfo): Sdk? = m.javaHome?.let { home -> sdks.getOrPut(home) { findOrCreateSdk(home, m.java) } }
 
-        // Project JDK and language level: those of the first module (jpm builds every module with its own).
         infos.firstOrNull()?.modules?.firstOrNull()?.let { first ->
             sdkFor(first)?.let { ProjectRootManager.getInstance(project).projectSdk = it }
             languageLevel(first.release)?.let { LanguageLevelProjectExtension.getInstance(project).languageLevel = it }
@@ -63,7 +62,6 @@ object JpmProjectSetup {
 
         val libraries = updateLibraries(project, infos)
 
-        // IntelliJ module names: jpm's, and for a name another project already uses, prefixed with its project.
         val wanted = LinkedHashMap<String, Path>()
         val names = infos.map { HashMap<String, String>() }
         fun claim(i: Int, jpmName: String, dir: Path) {
@@ -81,7 +79,6 @@ object JpmProjectSetup {
 
         val moduleModel = ModuleManager.getInstance(project).getModifiableModel()
         val previous = PropertiesComponent.getInstance(project).getList(MODULES_KEY).orEmpty().toSet()
-        // Modules jpm made earlier that are gone, and modules IntelliJ made for these folders on its own.
         for (module in moduleModel.modules.toList()) {
             val name = module.name
             if (name in wanted) continue
@@ -105,7 +102,6 @@ object JpmProjectSetup {
                 info.modules.firstOrNull()?.let { sdkFor(it) }?.let { root.sdk = it } ?: root.inheritSdk()
                 rootModels.add(root)
             }
-            // Workspace dependencies refer to modules of the same jpm project.
             val own = names[i].mapValues { (_, ideaName) -> modules.getValue(ideaName) }
             for (m in info.modules) {
                 val model = ModuleRootManager.getInstance(modules.getValue(names[i].getValue(m.name))).modifiableModel
@@ -155,7 +151,6 @@ object JpmProjectSetup {
         if (sdk != null) model.sdk = sdk else model.inheritSdk()
         languageLevel(m.release)?.let { model.getModuleExtension(LanguageLevelModuleExtension::class.java).languageLevel = it }
 
-        // IntelliJ's own builder writes elsewhere than jpm, so the two never trip over each other.
         val out = model.getModuleExtension(CompilerModuleExtension::class.java)
         out.inheritCompilerOutputPath(false)
         out.setCompilerOutputPath(url(projectDir.resolve(".cache").resolve("idea").resolve(m.name).resolve("classes")))

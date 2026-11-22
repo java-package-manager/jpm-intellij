@@ -17,7 +17,6 @@ class JpmProjectInfo {
 
     companion object {
         fun parse(json: String): JpmProjectInfo {
-            // jpm prints status lines to stderr; stdout holds only the JSON object.
             val start = json.indexOf('{')
             require(start >= 0) { "jpm info printed no JSON" }
             return Gson().fromJson(json.substring(start), JpmProjectInfo::class.java)

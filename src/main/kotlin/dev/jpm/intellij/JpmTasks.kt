@@ -21,7 +21,6 @@ object JpmTasks {
         val lifecycle = ArrayList<JpmTask>()
         lifecycle.add(JpmTask("build", listOf("build"), "compile and package the jars", dir))
         if (info.modules.any { it.hasTests }) lifecycle.add(JpmTask("test", listOf("test"), "run the tests", dir))
-        // `jpm start` from the root needs one module to run: the project's, or the only one with a main
         val runnable = info.modules.filter { !it.main.isNullOrEmpty() }
         if (runnable.size == 1) lifecycle.addAll(runTasks(runnable[0], Path.of(runnable[0].dir)))
         lifecycle.add(JpmTask("clean", listOf("clean"), "remove build output", dir))

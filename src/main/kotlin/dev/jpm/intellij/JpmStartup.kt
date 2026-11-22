@@ -50,7 +50,6 @@ class JpmFileListener(private val project: Project) : BulkFileListener {
             if (!e.path.startsWith(base)) continue
             val name = e.path.substringAfterLast('/')
             val isDir = e.file?.isDirectory == true
-            // A project.jsonc (or a folder that may hold one) appearing, going or moving changes which projects there are.
             if ((name == Jpm.MANIFEST || isDir) && (e is VFileCreateEvent || e is VFileDeleteEvent || e is VFileMoveEvent ||
                     (e is VFilePropertyChangeEvent && e.propertyName == com.intellij.openapi.vfs.VirtualFile.PROP_NAME))) {
                 sync.rootsChanged()

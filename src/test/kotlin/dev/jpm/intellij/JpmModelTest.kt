@@ -47,16 +47,16 @@ class JpmModelTest {
         val root = tmp.root.toPath()
         fun project(rel: String) = root.resolve(rel).also { Files.createDirectories(it) }.resolve(Jpm.MANIFEST).also { Files.writeString(it, "{}") }
         project("services/api")
-        project("services/api/fixtures/demo")    // nested inside a project: found too
+        project("services/api/fixtures/demo")
         project("tools/cli")
-        project("node_modules/pkg")              // dependencies, build output and hidden folders are skipped
+        project("node_modules/pkg")
         project(".git/x")
         project("build/y")
         project("a/b/c/d/e/f/g/too-deep")
         fun found() = Jpm.findRoots(root).map { root.relativize(it).toString().ifEmpty { "." } }
         assertEquals(listOf("services/api", "tools/cli", "services/api/fixtures/demo"), found())
 
-        project(".")                             // the folder itself comes first, then what is below it
+        project(".")
         assertEquals(listOf(".", "services/api", "tools/cli", "services/api/fixtures/demo"), found())
     }
 

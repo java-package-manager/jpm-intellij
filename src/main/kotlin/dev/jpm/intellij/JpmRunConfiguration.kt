@@ -120,7 +120,6 @@ class JpmRunConfiguration(project: Project, factory: ConfigurationFactory, name:
                 add(Path.of(it.dir).resolve("dist"))
             }
         }
-        // JpmFileListener reloads the project if a manifest or the lockfile changed.
         LocalFileSystem.getInstance().refreshNioFiles(files, true, true, null)
     }
 }

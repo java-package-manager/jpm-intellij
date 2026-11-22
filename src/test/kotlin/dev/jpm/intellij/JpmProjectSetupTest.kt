@@ -83,13 +83,11 @@ class JpmProjectSetupTest : HeavyPlatformTestCase() {
         assertEquals("17", app.getModuleExtension(com.intellij.openapi.roots.LanguageLevelModuleExtension::class.java)
             .languageLevel!!.toJavaVersion().feature.toString())
 
-        // Loading again changes nothing and leaves no duplicates.
         ApplicationManager.getApplication().invokeAndWait { JpmProjectSetup.apply(project, info) }
         assertEquals(3, ModuleManager.getInstance(project).modules.size)
         val jpmLibraries = LibraryTablesRegistrar.getInstance().getLibraryTable(project).libraries.filter { it.name!!.startsWith("jpm: ") }
         assertEquals(jpmLibraries.map { it.name }.distinct().size, jpmLibraries.size)
 
-        // A dependency removed from the project disappears from the IDE.
         val trimmed = JpmProjectInfo.parse(out.stdout)
         trimmed.modules.forEach { m -> m.ideDependencies = m.ideDependencies.orEmpty().filterNot { it.id.contains("commons-lang3") } }
         ApplicationManager.getApplication().invokeAndWait { JpmProjectSetup.apply(project, trimmed) }
@@ -105,7 +103,6 @@ class JpmProjectSetupTest : HeavyPlatformTestCase() {
         val base = Files.createTempDirectory("jpm-nested")
         try {
             fun write(rel: String, text: String) = base.resolve(rel).also { Files.createDirectories(it.parent) }.writeText(text)
-            // two projects in subfolders, both with a module called "app"
             write("backend/project.jsonc", """{ "name": "app", "version": "1.0.0", "java": "21" }""")
             write("backend/src/b/App.java", "package b; public class App {}")
             write("tools/project.jsonc", """{ "name": "tools", "version": "1.0.0", "workspace": ["app"] }""")
@@ -159,7 +156,6 @@ class JpmProjectSetupTest : HeavyPlatformTestCase() {
                 assertEquals(out.stderr, 0, out.exitCode)
                 JpmProjectInfo.parse(out.stdout)
             }
-            // The workspace's modules come with the workspace, so jpm runs twice, not four times.
             assertEquals(listOf(base, base.resolve("fixtures/demo")), ran)
             assertEmpty(loaded.failures)
             ApplicationManager.getApplication().invokeAndWait { JpmProjectSetup.apply(project, loaded.infos) }
@@ -196,7 +192,6 @@ class JpmProjectSetupTest : HeavyPlatformTestCase() {
             assertEquals(1, second.failures.size)
             assertTrue(second.failures.single().contains("unknown field"))
 
-            // never loaded: nothing to keep, the rest still loads
             val third = sync.collectInfos(listOf(a, b), emptyMap()) { dir ->
                 if (dir == b) throw JpmSync.LoadException("broken") else info(dir, "a")
             }

@@ -156,7 +156,6 @@ private class JpmToolWindowPanel(private val project: Project) : SimpleToolWindo
                 if (infos.size == 1) {
                     fill(infos[0], root)
                 } else {
-                    // Several jpm projects in nested folders: one section each, its commands run in its folder.
                     for (info in infos) {
                         val node = DefaultMutableTreeNode(Item.ProjectNode(info.name, sync.relative(Path.of(info.projectDir))))
                         root.add(node)
@@ -173,7 +172,6 @@ private class JpmToolWindowPanel(private val project: Project) : SimpleToolWindo
         fun node(item: Item, parent: DefaultMutableTreeNode = top) = DefaultMutableTreeNode(item).also { parent.add(it) }
         fun task(t: JpmTask, parent: DefaultMutableTreeNode) = node(Item.Command(t.label, t.args, t.hint, t.dir), parent)
 
-        // only what can run: no test without tests, no start or dev without a main, no publish without repositories
         for (group in JpmTasks.forProject(info)) {
             if (group.tasks.isEmpty()) continue
             val g = node(Item.Group(group.name))
@@ -184,7 +182,6 @@ private class JpmToolWindowPanel(private val project: Project) : SimpleToolWindo
         for (m in info.modules) {
             val mod = node(Item.ModuleNode(m.name, m.version), modules)
             if (info.workspace) {
-                // a module's own tasks run in its folder, so jpm acts on that module only
                 val tasks = JpmTasks.forModule(info, m)
                 if (tasks.isNotEmpty()) {
                     val g = node(Item.Group("Tasks"), mod)

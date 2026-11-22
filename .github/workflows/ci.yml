@@ -45,6 +45,9 @@ jobs:
           java-version: "21"
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: No comments in the sources
+        run: java checks/Comments.java check src
+
       - name: Test and build the plugin
         run: ./gradlew test buildPlugin
 

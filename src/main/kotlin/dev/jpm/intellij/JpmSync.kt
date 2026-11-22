@@ -84,7 +84,6 @@ class JpmSync(private val project: Project) : Disposable {
         object : Task.Backgroundable(project, "Loading jpm project", true) {
             override fun run(indicator: ProgressIndicator) {
                 this@JpmSync.indicator = indicator
-                // the schema of project.jsonc comes from the jpm that loads the project
                 JpmSchemaProvider.update()
                 val roots = roots()
                 val loaded = collectInfos(roots, previous) { dir ->
@@ -113,7 +112,6 @@ class JpmSync(private val project: Project) : Disposable {
                         "\nThey keep their last loaded state until they load again.", NotificationType.WARNING,
                         listOf(NotificationAction.createSimple("Reload") { reload() }))
                 }
-                // jpm info may have written project.lock; that is part of this load, not a new change.
                 lastInputs = inputsHash()
                 parsed.flatMap { it.modules }.mapNotNull { m -> m.javaError?.let { "${m.name}: $it" } }.takeIf { it.isNotEmpty() }?.let {
                     notify("The JDK for this project is not available", it.joinToString("\n"), NotificationType.WARNING)

@@ -65,7 +65,6 @@ class JpmTasksTest {
         val app = module("app", "/p/app", main = mapOf("main" to "a.App"), tests = true, scripts = listOf("gen"))
         val info = project(true, api, app, extensions = repos("central"))
 
-        // the root's start runs the only module with a main, in its folder
         val start = JpmTasks.forProject(info).flatMap { it.tasks }.single { it.label == "start" }
         assertEquals(Path.of("/p/app"), start.dir)
         assertTrue(labels(info).contains("test"))

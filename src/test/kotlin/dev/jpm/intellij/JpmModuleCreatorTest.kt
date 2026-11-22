@@ -48,7 +48,6 @@ class JpmModuleCreatorTest : HeavyPlatformTestCase() {
         val text = base.resolve("project.jsonc").readText()
         assertTrue(text, text.contains("\"core\", \"tools/app\" // the library"))
         assertTrue(text.startsWith("// the workspace"))
-        // adding it again changes nothing
         assertEquals(JpmModuleCreator.Result.WORKSPACE_MODULE, add(base.resolve("tools/app")))
         assertEquals(text, base.resolve("project.jsonc").readText())
     }
@@ -81,7 +80,6 @@ class JpmModuleCreatorTest : HeavyPlatformTestCase() {
         assertTrue(Files.isRegularFile(dir.resolve("project.jsonc")))
         assertTrue(Files.isRegularFile(dir.resolve("src/app/App.java")))
         assertTrue(base.resolve("project.jsonc").readText().contains("""["app"]"""))
-        // jpm accepts the result as a workspace with that module
         val out = Jpm.run(base, listOf("info", "--json"), null)
         assertEquals(out.stderr, 0, out.exitCode)
         assertEquals(listOf("app"), JpmProjectInfo.parse(out.stdout).modules.map { it.name })
