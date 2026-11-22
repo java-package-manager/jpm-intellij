@@ -18,7 +18,7 @@ import java.nio.file.Path
 import kotlin.io.path.writeText
 
 /**
- * Loads a real jpm workspace (api, impl, app) the way the plugin does: `jpm info --json --ide` from the
+ * Loads a real jpm workspace (api, impl, app) the way the plugin does: over the jpm protocol from the
  * jpm on this machine (or JPM_TEST_EXE), applied to a fresh project. Skipped where there is no jpm.
  */
 class JpmProjectSetupTest : HeavyPlatformTestCase() {
@@ -48,9 +48,7 @@ class JpmProjectSetupTest : HeavyPlatformTestCase() {
             println("Skipped: no jpm (install it, or set JPM_TEST_EXE)")
             return
         }
-        val out = Jpm.run(dir, listOf("info", "--json", "--ide"), null)
-        assertEquals(out.stderr, 0, out.exitCode)
-        val info = JpmProjectInfo.parse(out.stdout)
+        val info = JpmApi.load(dir)
 
         ApplicationManager.getApplication().invokeAndWait { JpmProjectSetup.apply(project, info) }
 
@@ -88,7 +86,7 @@ class JpmProjectSetupTest : HeavyPlatformTestCase() {
         val jpmLibraries = LibraryTablesRegistrar.getInstance().getLibraryTable(project).libraries.filter { it.name!!.startsWith("jpm: ") }
         assertEquals(jpmLibraries.map { it.name }.distinct().size, jpmLibraries.size)
 
-        val trimmed = JpmProjectInfo.parse(out.stdout)
+        val trimmed = JpmApi.load(dir)
         trimmed.modules.forEach { m -> m.ideDependencies = m.ideDependencies.orEmpty().filterNot { it.id.contains("commons-lang3") } }
         ApplicationManager.getApplication().invokeAndWait { JpmProjectSetup.apply(project, trimmed) }
         assertFalse(LibraryTablesRegistrar.getInstance().getLibraryTable(project).libraries.any { it.name!!.contains("commons-lang3") })
@@ -112,9 +110,7 @@ class JpmProjectSetupTest : HeavyPlatformTestCase() {
             val roots = Jpm.findRoots(base)
             assertEquals(listOf(base.resolve("backend"), base.resolve("tools"), base.resolve("tools/app")), roots)
             val infos = JpmSync.get(project).collectInfos(roots, emptyMap()) { dir ->
-                val out = Jpm.run(dir, listOf("info", "--json", "--ide"), null)
-                assertEquals(out.stderr, 0, out.exitCode)
-                JpmProjectInfo.parse(out.stdout)
+                JpmApi.load(dir)
             }.infos
             assertEquals(2, infos.size)
             ApplicationManager.getApplication().invokeAndWait { JpmProjectSetup.apply(project, infos) }
@@ -152,9 +148,7 @@ class JpmProjectSetupTest : HeavyPlatformTestCase() {
             val ran = ArrayList<Path>()
             val loaded = JpmSync.get(project).collectInfos(roots, emptyMap()) { dir ->
                 ran.add(dir)
-                val out = Jpm.run(dir, listOf("info", "--json", "--ide"), null)
-                assertEquals(out.stderr, 0, out.exitCode)
-                JpmProjectInfo.parse(out.stdout)
+                JpmApi.load(dir)
             }
             assertEquals(listOf(base, base.resolve("fixtures/demo")), ran)
             assertEmpty(loaded.failures)
@@ -212,6 +206,27 @@ class JpmProjectSetupTest : HeavyPlatformTestCase() {
             dir.toFile().deleteRecursively()
         } finally {
             super.tearDown()
+        }
+    }
+
+    fun testExplainsAJpmWithoutTheProtocol() {
+        if (com.intellij.openapi.util.SystemInfo.isWindows) return
+        val old = Files.createTempFile("old-jpm", "")
+        old.writeText("#!/bin/sh\necho 'error: Unknown command \"api\"' >&2\nexit 1\n")
+        old.toFile().setExecutable(true)
+        JpmSettings.get().state.jpmPath = old.toString()
+        try {
+            val message = try {
+                JpmApi.load(dir)
+                fail("a jpm without `jpm api` loaded the project")
+                ""
+            } catch (e: JpmSync.LoadException) {
+                e.message.orEmpty()
+            }
+            assertTrue(message, message.contains("needs jpm ${JpmApi.MIN_JPM} or newer"))
+        } finally {
+            JpmSettings.get().state.jpmPath = null
+            Files.deleteIfExists(old)
         }
     }
 }

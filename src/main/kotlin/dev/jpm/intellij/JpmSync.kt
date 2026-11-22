@@ -88,13 +88,11 @@ class JpmSync(private val project: Project) : Disposable {
                 val roots = roots()
                 val loaded = collectInfos(roots, previous) { dir ->
                     indicator.checkCanceled()
-                    indicator.text = "jpm info in ${relative(dir)}"
-                    val out = Jpm.run(dir, listOf("info", "--json", "--ide"), indicator)
-                    indicator.checkCanceled()
-                    if (out.exitCode != 0) {
-                        throw LoadException(out.stderr.ifBlank { out.stdout }.trim().lines().filterNot { it.startsWith("Picked up ") }.joinToString("\n"))
+                    indicator.text = "Loading the jpm project in ${relative(dir)}"
+                    JpmApi.load(dir).also { info ->
+                        indicator.checkCanceled()
+                        info.modules.forEach { it.hasTests = hasTestSources(it) }
                     }
-                    JpmProjectInfo.parse(out.stdout).also { info -> info.modules.forEach { it.hasTests = hasTestSources(it) } }
                 }
                 val parsed = loaded.infos
                 if (parsed.isEmpty() && loaded.failures.isNotEmpty()) {
@@ -146,9 +144,12 @@ class JpmSync(private val project: Project) : Disposable {
     private fun fail(message: String) {
         error = message
         val actions = if (Jpm.executable() == null) {
-            listOf(NotificationAction.createSimple("Settings") {
-                ShowSettingsUtil.getInstance().showSettingsDialog(project, JpmConfigurable::class.java)
-            })
+            listOf(NotificationAction.createSimpleExpiring("Install jpm") { JpmInstaller.install(project) { reload() } },
+                NotificationAction.createSimple("Settings") {
+                    ShowSettingsUtil.getInstance().showSettingsDialog(project, JpmConfigurable::class.java)
+                })
+        } else if (message.contains(JpmApi.MIN_JPM)) {
+            listOf(NotificationAction.createSimpleExpiring("Upgrade jpm") { JpmInstaller.upgrade(project) { reload() } })
         } else {
             listOf(NotificationAction.createSimple("Reload") { reload() })
         }

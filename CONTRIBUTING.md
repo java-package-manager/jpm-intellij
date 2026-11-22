@@ -19,8 +19,8 @@ java checks/Comments.java check src     # the comment lint CI runs
 
 - No `//` or `/* */` comments ([docs/adr/0001](docs/adr/0001-decisions-live-in-adrs.md)). Decisions go
   into [docs/adr](docs/adr); KDoc is fine.
-- The plugin learns about a project only from jpm (`jpm info --json --ide` today, jpm's client jar once
-  it exists). It never parses `project.jsonc` or build files itself, and never bundles a jpm.
+- The plugin learns about a project only from jpm, over the jpm protocol with jpm's client
+  (`dev.jpm:jpm-api`, `JpmApi`). It never parses `project.jsonc` or build files itself, and never bundles a jpm.
 - The oldest supported IDE is `sinceBuild` in `build.gradle.kts` (261, on Java 21). jpm's client jar
   targets that IDE's Java.
 - No stability before 1.0.

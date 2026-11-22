@@ -48,8 +48,12 @@ jobs:
       - name: No comments in the sources
         run: java checks/Comments.java check src
 
+      # The tests that load real projects talk to jpm over its protocol (`jpm api`), in canary builds until jpm 0.12.0.
+      - name: Install jpm
+        run: curl -fsSL https://github.com/java-package-manager/jpm/releases/latest/download/install.sh | JPM_VERSION=canary sh
+
       - name: Test and build the plugin
-        run: ./gradlew test buildPlugin
+        run: JPM_TEST_EXE="$HOME/.jpm/bin/jpm" ./gradlew test buildPlugin
 
       - name: Check compatibility with IntelliJ IDEA releases
         run: ./gradlew verifyPlugin

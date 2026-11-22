@@ -4,11 +4,12 @@ Status: accepted
 
 ## Decision
 
-- The plugin reads a project from `jpm info --json --ide`. jpm prints status lines to stderr; stdout holds
-  only the JSON object (`JpmModel`). Moving to jpm's client jar replaces this (jpm roadmap, Milestone 4).
+- The plugin reads a project over the jpm protocol (`jpm api`) with jpm's client, `dev.jpm:jpm-api`:
+  `project/load` with sources, and `project/classpaths` for each package's scope (`JpmApi`). One `jpm api`
+  runs per load, so a jpm upgraded in between is picked up. It replaced `jpm info --json --ide`.
 - The schema of `project.jsonc` comes from the jpm that loads the project, because another jpm may have
   another schema (`JpmSync`, `JpmSettings`).
-- `jpm info` may write `project.lock`; that is part of the load, not a new change to react to (`JpmSync`).
+- Loading may write `project.lock`; that is part of the load, not a new change to react to (`JpmSync`).
 - A `project.jsonc`, or a folder that may hold one, appearing, going or moving changes which projects
   there are (`JpmStartup`). `JpmFileListener` reloads a project when a manifest or the lockfile changes,
   for example after a run configuration ran jpm (`JpmRunConfiguration`).

@@ -9,7 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * The schema comes from the installed jpm (`jpm schema --path`); here a small stand-in is served the same
+ * The schema comes from the installed jpm (schema/manifest); here a small stand-in is served the same
  * way. What the schema says is jpm's business and tested there.
  */
 class JpmSchemaTest : BasePlatformTestCase() {
@@ -22,7 +22,7 @@ class JpmSchemaTest : BasePlatformTestCase() {
         val schema = dir.resolve("schemas/1.0.0/project.schema.json")
         Files.createDirectories(schema.parent)
         Files.writeString(schema, SCHEMA)
-        JpmSchemaProvider.use(JpmSchemaProvider.parsePath("$schema\n"))
+        JpmSchemaProvider.use(schema)
         JsonSchemaService.Impl.get(project).reset()
         myFixture.enableInspections(JsonSchemaComplianceInspection())
     }
@@ -81,15 +81,6 @@ class JpmSchemaTest : BasePlatformTestCase() {
         val file = myFixture.configureByText(Jpm.MANIFEST, """{ "name": "demo" }""").virtualFile
         assertFalse(JsonSchemaService.Impl.get(project).getSchemaFilesForFile(file).any { it.name == "project.schema.json" })
         assertNull(JpmSchemaProvider.remoteSource)
-    }
-
-    fun testReadsThePathJpmPrints() {
-        val schema = dir.resolve("schemas/1.0.0/project.schema.json")
-        assertEquals(schema, JpmSchemaProvider.parsePath("$schema\n"))
-        assertEquals(schema, JpmSchemaProvider.parsePath("some notice\n$schema\n\n"))
-        assertNull(JpmSchemaProvider.parsePath(""))
-        assertNull(JpmSchemaProvider.parsePath("relative/project.schema.json"))
-        assertNull(JpmSchemaProvider.parsePath(dir.resolve("missing.json").toString()))
     }
 
 

@@ -1,5 +1,7 @@
 package dev.jpm.intellij
 
+import dev.jpm.api.client.Results
+import dev.jpm.api.json.Jsonc
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
@@ -12,34 +14,44 @@ class JpmModelTest {
     val tmp = TemporaryFolder()
 
     @Test
-    fun parsesJpmInfo() {
-        val json = """
-            Picked up JAVA_TOOL_OPTIONS: -Dx=y
-            {
-              "infoVersion": 1, "jpmVersion": "0.5.0", "projectDir": "/p", "name": "demo", "workspace": false,
-              "scripts": ["format"],
-              "modules": [{
-                "name": "demo", "dir": "/p", "sourceDir": "/p/src", "resourceDir": "/p/src/assets",
-                "testDir": "/p/test", "testResourceDir": "/p/test/assets", "javaHome": "/jdks/temurin-21",
-                "release": 17, "main": {"main": "demo.App"},
-                "ideDependencies": [
-                  {"id": "workspace:api", "scope": "compile", "module": "api"},
-                  {"id": "org.slf4j:slf4j-api", "scope": "provided", "version": "2.0.16",
-                   "jars": ["/r/slf4j-api.jar"], "sources": "/r/slf4j-api-sources.jar"}
-                ],
-                "someFieldAddedLater": true
-              }]
-            }
-        """.trimIndent()
-        val info = JpmProjectInfo.parse(json)
+    fun turnsProtocolResultsIntoTheModel() {
+        fun pkg(id: String, extra: String = "") = """{ "id": "$id", "kind": "maven", "version": "1", "jars": ["/r/$id.jar"]$extra }"""
+        val libWithSources = pkg("g:lib", ", \"sources\": \"/r/g:lib-sources.jar\"")
+        val load = """
+            { "dir": "/p", "name": "demo", "version": "1.0.0", "workspace": false, "scripts": [{ "name": "format", "run": "x" }],
+              "extensions": { "publish": { "javadoc": true } },
+              "modules": [{ "name": "demo", "dir": "/p", "layout": "jpm", "main": { "main": "demo.App" },
+                "folders": { "sources": ["/p/src"], "resources": ["/p/src/assets"], "tests": ["/p/test"], "testResources": ["/p/test/assets"],
+                             "generatedSources": ["/p/.cache/gen"], "exclude": ["/p/.cache", "/p/dist"] },
+                "jdk": { "spec": "21", "home": "/jdks/temurin-21", "release": 17 },
+                "dependencies": [{ "key": "workspace:api", "kind": "workspace", "scope": "runtime", "spec": "*", "module": "api" }],
+                "packages": [$libWithSources],
+                "someFieldAddedLater": true }] }
+        """
+        val classpaths = """
+            { "compile": [{ "id": "workspace:api", "kind": "workspace", "module": "api", "jars": [] }, ${pkg("g:lib")}, ${pkg("g:annotations")}],
+              "runtime": [{ "id": "workspace:api", "kind": "workspace", "module": "api", "jars": [] }, ${pkg("g:lib")}, ${pkg("g:driver")}],
+              "testCompile": [${pkg("g:junit")}], "testRuntime": [${pkg("g:junit")}] }
+        """
+        @Suppress("UNCHECKED_CAST")
+        fun json(s: String) = Jsonc.parse(s) as Map<String, Any?>
+        val project = Results.project(json(load))
+        val info = JpmApi.info(project, mapOf("demo" to Results.classpaths(json(classpaths))), "0.12.0")
         assertEquals("demo", info.name)
         assertEquals(listOf("format"), info.scripts)
         val m = info.modules.single()
         assertEquals(17, m.release)
+        assertEquals("/jdks/temurin-21", m.javaHome)
         assertEquals("/p/src/assets", m.resourceDir)
-        assertEquals("api", m.ideDependencies!![0].module)
-        assertEquals("provided", m.ideDependencies!![1].scope)
-        assertNull(m.ideDependencies!![1].module)
+        assertEquals("/p/test", m.testDir)
+        assertEquals("/p/.cache/gen", m.generatedSourceDir)
+        assertEquals(mapOf("main" to "demo.App"), m.main)
+        val scopes = m.ideDependencies!!.associate { it.id to it.scope }
+        assertEquals(mapOf("workspace:api" to "compile", "g:lib" to "compile", "g:annotations" to "provided", "g:driver" to "runtime",
+            "g:junit" to "test"), scopes)
+        assertEquals("api", m.ideDependencies!!.first { it.id == "workspace:api" }.module)
+        assertEquals("/r/g:lib-sources.jar", m.ideDependencies!!.first { it.id == "g:lib" }.sources)
+        assertNull(m.ideDependencies!!.first { it.id == "g:driver" }.sources)
     }
 
     @Test

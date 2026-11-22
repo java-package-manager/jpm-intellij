@@ -34,7 +34,7 @@ import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 
 /**
- * Applies what `jpm info --ide` reports to the IntelliJ project: one module per jpm module (plus one for
+ * Applies what jpm reports ([JpmApi]) to the IntelliJ project: one module per jpm module (plus one for
  * the workspace root), its folders, its dependencies as project libraries with sources, its JDK and
  * language level. Everything jpm set up before and no longer reports is removed again.
  */

@@ -1,10 +1,7 @@
 package dev.jpm.intellij
 
-import com.google.gson.Gson
-
-/** What `jpm info --json --ide` reports (infoVersion 1). Fields are only ever added. */
+/** A jpm project as the plugin uses it, made by [JpmApi] from jpm's protocol answers. */
 class JpmProjectInfo {
-    var infoVersion: Int = 0
     var jpmVersion: String? = null
     var projectDir: String = ""
     var name: String = ""
@@ -14,14 +11,6 @@ class JpmProjectInfo {
     /** Settings of jpm extensions by name, as in the root project.jsonc (e.g. "publish"). */
     var extensions: Map<String, Any?>? = null
     var modules: List<JpmModuleInfo> = emptyList()
-
-    companion object {
-        fun parse(json: String): JpmProjectInfo {
-            val start = json.indexOf('{')
-            require(start >= 0) { "jpm info printed no JSON" }
-            return Gson().fromJson(json.substring(start), JpmProjectInfo::class.java)
-        }
-    }
 }
 
 class JpmModuleInfo {

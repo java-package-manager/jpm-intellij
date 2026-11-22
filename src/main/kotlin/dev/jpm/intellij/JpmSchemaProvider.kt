@@ -16,10 +16,10 @@ import java.nio.file.Path
 
 /**
  * Completion, documentation and validation for every project.jsonc, from the schema of the jpm that is
- * installed: `jpm schema --path` writes the schema built into that jpm to ~/.jpm/schemas/<version>/ and
- * prints where, so the editor describes exactly the manifests that jpm reads, offline. Manifests whose
+ * installed: the plugin asks it over the jpm protocol (schema/manifest) and keeps the answer in the IDE's
+ * system folder, so the editor describes exactly the manifests that jpm reads, offline. Manifests whose
  * "$schema" names jpm's published schema get the local one too, so nothing is downloaded. Without jpm (or
- * with one too old for `jpm schema`) the plugin offers no schema of its own.
+ * with one too old for the protocol) the plugin offers no schema of its own.
  */
 class JpmSchemaProviderFactory : JsonSchemaProviderFactory, DumbAware {
     override fun getProviders(project: Project): List<JsonSchemaFileProvider> = listOf(JpmSchemaProvider)
@@ -52,7 +52,7 @@ object JpmSchemaProvider : JsonSchemaFileProvider {
     override fun getRemoteSource(): String? = if (schema != null) SCHEMA_URL else null
 
     /**
-     * Asks the jpm executable for its schema, unless that jpm was asked already. Runs jpm, so call it off
+     * Asks the jpm executable for its schema over the protocol (schema/manifest), unless that jpm was asked already. Runs jpm, so call it off
      * the EDT; failures leave no schema and are only logged.
      */
     fun update() {
@@ -62,21 +62,15 @@ object JpmSchemaProvider : JsonSchemaFileProvider {
         askedJpm = key
         if (exe == null) return use(null)
         val path = try {
-            val out = Jpm.run(exe.parent ?: Path.of(System.getProperty("user.home")), listOf("schema", "--path"), null)
-            if (out.exitCode == 0) parsePath(out.stdout)
-            else null.also { log.info("jpm schema --path failed (a jpm without the schema command?): ${out.stderr.trim()}") }
+            val file = com.intellij.openapi.application.PathManager.getSystemDir().resolve("jpm").resolve("project.schema.json")
+            Files.createDirectories(file.parent)
+            Files.writeString(file, JpmApi.manifestSchema(exe.parent ?: Path.of(System.getProperty("user.home"))))
+            file
         } catch (e: Exception) {
-            log.info("Could not run jpm schema --path", e)
+            log.info("Could not ask jpm for its schema (schema/manifest)", e)
             null
         }
         use(path)
-    }
-
-    /** The schema file named by the output of `jpm schema --path`: its last line, if that file exists. */
-    fun parsePath(stdout: String): Path? {
-        val line = stdout.lines().map { it.trim() }.lastOrNull { it.isNotEmpty() } ?: return null
-        val p = try { Path.of(line) } catch (e: java.nio.file.InvalidPathException) { return null }
-        return p.takeIf { it.isAbsolute && Files.isRegularFile(it) }
     }
 
     /** Serves [path] as the schema of project.jsonc (null for none) and has open projects pick it up. */

@@ -60,24 +60,24 @@ and search for **jpm** on the Marketplace tab. Each release's zip can also be in
 
 ## Requirements
 
-jpm 0.5.0 or newer (for `jpm info --ide`), installed in `~/.jpm/bin` by the jpm install script or on `PATH`.
-Editing `project.jsonc` with its schema needs a jpm with `jpm schema` (newer than 0.7.2); with an older one
-the schema comes only from a manifest's `"$schema"` line.
+jpm 0.12.0 or newer (for the jpm protocol, `jpm api`), installed in `~/.jpm/bin` by the jpm install script or
+on `PATH`. Without jpm, the plugin offers to install it; with an older one, to upgrade it.
 Another location can be set in **Settings | Build, Execution, Deployment | Build Tools | jpm**, which also
 turns automatic reload off.
 
 ## How it works
 
-The plugin runs `jpm info --json --ide` in the project folder and applies what it reports. jpm stays the
+The plugin starts `jpm api` and asks it for the project over the jpm protocol, with jpm's client
+(`dev.jpm:jpm-api`), then applies what jpm reports. jpm stays the
 source of truth: the plugin never reads `project.jsonc` itself, so it understands every manifest jpm does.
 IntelliJ's own build (Build | Build Project, running classes and tests from the gutter, debugging) works on
 the configured modules and writes to `.cache/idea/`, apart from jpm's output.
 
 ## The schema
 
-The plugin does not bundle jpm's schema. It runs `jpm schema --path`, which writes the schema built into
-that jpm to `~/.jpm/schemas/<version>/project.schema.json` and prints the path, and serves that file for every
-`project.jsonc` (also for manifests whose `"$schema"` names jpm's published schema). jpm is asked again when
+The plugin does not bundle jpm's schema. It asks jpm for the schema built into it (`schema/manifest`), keeps
+it in the IDE's system folder, and serves that file for every `project.jsonc` (also for manifests whose
+`"$schema"` names jpm's published schema). jpm is asked again when
 the project reloads after jpm was upgraded, or when its path changes in the settings.
 
 ## Building

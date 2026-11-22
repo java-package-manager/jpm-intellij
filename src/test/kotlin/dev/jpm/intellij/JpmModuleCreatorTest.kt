@@ -80,8 +80,6 @@ class JpmModuleCreatorTest : HeavyPlatformTestCase() {
         assertTrue(Files.isRegularFile(dir.resolve("project.jsonc")))
         assertTrue(Files.isRegularFile(dir.resolve("src/app/App.java")))
         assertTrue(base.resolve("project.jsonc").readText().contains("""["app"]"""))
-        val out = Jpm.run(base, listOf("info", "--json"), null)
-        assertEquals(out.stderr, 0, out.exitCode)
-        assertEquals(listOf("app"), JpmProjectInfo.parse(out.stdout).modules.map { it.name })
+        assertEquals(listOf("app"), JpmApi.load(base).modules.map { it.name })
     }
 }
