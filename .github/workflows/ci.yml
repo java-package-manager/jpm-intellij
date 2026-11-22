@@ -19,7 +19,7 @@ jobs:
       release: ${{ steps.decide.outputs.release }}
       version: ${{ steps.decide.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Decide whether to release
         id: decide
         run: |
@@ -38,7 +38,7 @@ jobs:
     needs: version
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # jpm installs the JDK that Gradle runs on, and the tests that load real projects talk to jpm over its
       # protocol (`jpm api`), in canary builds until jpm 0.12.0
       - uses: java-package-manager/setup-jpm@v1
@@ -46,7 +46,7 @@ jobs:
         with:
           version: canary
           java: "21"
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       - name: No comments in the sources
         run: java checks/Comments.java check src
@@ -57,7 +57,7 @@ jobs:
       - name: Check compatibility with IntelliJ IDEA releases
         run: ./gradlew verifyPlugin
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: jpm-intellij
           path: build/distributions/*.zip
@@ -72,9 +72,9 @@ jobs:
     env:
       VERSION: ${{ needs.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: jpm-intellij
           path: release
@@ -128,13 +128,13 @@ jobs:
       PLUGIN_SIGNING_PRIVATE_KEY: ${{ secrets.PLUGIN_SIGNING_PRIVATE_KEY }}
       PLUGIN_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.PLUGIN_SIGNING_PRIVATE_KEY_PASSWORD }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: env.JETBRAINS_MARKETPLACE_TOKEN != ''
       - uses: java-package-manager/setup-jpm@v1
         if: env.JETBRAINS_MARKETPLACE_TOKEN != ''
         with:
           java: "21"
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
         if: env.JETBRAINS_MARKETPLACE_TOKEN != ''
       - name: Publish to the JetBrains Marketplace
         if: env.JETBRAINS_MARKETPLACE_TOKEN != ''
