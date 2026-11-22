@@ -3,7 +3,7 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
     id("java")
-    id("org.jetbrains.kotlin.jvm") version "2.2.20"
+    id("org.jetbrains.kotlin.jvm") version "2.4.21"
     id("org.jetbrains.intellij.platform") version "2.20.1"
 }
 
@@ -43,6 +43,9 @@ kotlin {
 }
 
 intellijPlatform {
+    // Instrumentation compiles GUI Designer forms and adds @NotNull checks to Java code; the plugin has neither
+    // (Kotlin checks nullability itself), and the task uses Gradle's deprecated Ant builder.
+    instrumentCode = false
     pluginVerification {
         // The oldest supported release (2026.1) and the newest one; every IDE in between shares their APIs.
         ides {
