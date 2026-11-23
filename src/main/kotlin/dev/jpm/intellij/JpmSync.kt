@@ -103,6 +103,7 @@ class JpmSync(private val project: Project) : Disposable {
                     if (!project.isDisposed) {
                         JpmProjectSetup.apply(project, parsed)
                         if (JpmSettings.get().state.runConfigurations) JpmRunConfigs.sync(project, parsed)
+                        JpmVersions.refresh(project, parsed)
                     }
                 }, com.intellij.openapi.application.ModalityState.nonModal())
                 infos = parsed

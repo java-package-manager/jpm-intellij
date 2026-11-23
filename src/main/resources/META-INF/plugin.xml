@@ -47,6 +47,10 @@
                                               bundle="messages.JpmBundle" nameKey="inlay.resolved.name"
                                               descriptionKey="inlay.resolved.description"/>
         <externalAnnotator language="JSON" implementationClass="dev.jpm.intellij.JpmCheckAnnotator"/>
+        <completion.contributor language="JSON" implementationClass="dev.jpm.intellij.JpmVersionCompletion" order="first"/>
+        <localInspection language="JSON" shortName="JpmNewerVersion" displayName="A dependency with a newer release"
+                         groupName="jpm" enabledByDefault="true" level="WEAK WARNING"
+                         implementationClass="dev.jpm.intellij.JpmNewerVersionInspection"/>
         <localInspection language="JSON" shortName="JpmMissingPath" displayName="A path in project.jsonc that does not exist"
                          groupName="jpm" enabledByDefault="true" level="WARNING"
                          implementationClass="dev.jpm.intellij.JpmMissingPathInspection"/>
