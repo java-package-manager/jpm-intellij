@@ -18,7 +18,16 @@ up: open a folder with a `project.jsonc` and it is ready to code in, with nothin
 - **Editing `project.jsonc`.** Completion, documentation and validation from the JSON Schema of the jpm you
   have installed, so the editor knows exactly the fields that jpm reads, offline and without a `"$schema"`
   line: unknown fields, wrong dependency keys, misspelled options and invalid values are underlined as you
-  type.
+  type. Ctrl+click on a value goes to what it names: the class of `main` and `defineClass`, the folders of
+  `workspace`, `sources` and `resources`, patch and script files, the script a hook runs, the packages
+  `relocate` moves, and the license file. Renaming or moving those updates `project.jsonc`. A value that names a
+  file or folder that does not exist (workspace modules, `sources`, `resources`, patches, script files) gets a
+  warning. A dependency whose version is a range shows what `project.lock` resolved it to next to it. Versions
+  complete with what the repositories have, newest first, and a dependency with a newer release is marked,
+  with fixes that write the new version or run `jpm update <dependency> --latest` (needs jpm 0.13, which
+  answers `dependencies/versions`). When the file is
+  saved, jpm's own warnings and errors about the manifest, its dependencies and its license (what `jpm check`
+  reports) are highlighted at the line they are about.
 - **Nested projects.** Every jpm project in the opened folder is loaded: the folder's own, projects nested
   inside it (test fixtures, examples), and projects in subfolders of a folder that is not one (a monorepo, a
   backend next to a frontend). A workspace's modules load with their workspace. Each project gets its own
@@ -35,10 +44,20 @@ up: open a folder with a `project.jsonc` and it is ready to code in, with nothin
   `extensions.publish` names repositories (one per repository), and `publish --local` always; and your
   scripts. In a workspace each module also gets its own tasks, run in its folder so jpm acts on that module
   only, next to its dependencies. Double-click to run; output goes to the Run window, where the command can
-  be rerun or stopped. Commands can also be saved as **jpm** run configurations.
+  be rerun or stopped. Commands can also be saved as **jpm** run configurations. Each module's dependencies expand
+  into the packages they bring in, as a tree (a package shown higher up is marked instead of expanded
+  again), and **Why Is It Here?** runs `jpm why` on the selected one.
+- **Run configurations** for every `main` entry (`jpm start`, `jpm start <entry>`) and every script
+  (`jpm run <script>`), named after their module in a workspace, and kept in step with `project.jsonc` on
+  every reload. Edit one and it becomes yours: it is no longer updated or removed. Settings can turn them off.
 - **Maven and Gradle migration.** Opening a Maven or Gradle project offers to move it to jpm (also
-  **Tools | Migrate to jpm…**): it shows what `jpm import --dry-run` would write and what does not carry
-  over, then runs `jpm import`. The Maven or Gradle files are not touched. See
+  **Tools | Migrate to jpm…**). The dialog lists what does not carry over first, then shows each
+  `project.jsonc` that `jpm import` would write in an editor, highlighted, to change before it is written.
+  It can also move the sources from the Maven layout to jpm's (`src/`, `src/assets/`, `test/`, `test/assets/`)
+  and drop `"layout": "maven"`, and delete the old build (build files, wrappers, `gradle/`, `build/` and
+  `target/`); by default the Maven or Gradle files are not touched. Afterwards it lists what still uses
+  Gradle or Maven, such as CI workflows, Dockerfiles, scripts, Renovate or Dependabot settings, `.gitignore`
+  entries and run configurations; double-click one to open it. See
   [MIGRATION.md](https://github.com/java-package-manager/jpm/blob/main/MIGRATION.md).
 - **New projects and modules.** jpm is a build system in the Java wizard, next to IntelliJ, Maven and
   Gradle (**File | New | Project** or **File | New | Module**, Java, Build system: jpm), and **File | New |

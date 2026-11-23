@@ -11,7 +11,7 @@
       <li>Finds jpm projects in nested folders too, and loads each of them.</li>
       <li>Reloads by itself when <code>project.jsonc</code> or <code>project.lock</code> change.</li>
       <li>A jpm tool window with the project's tasks and scripts: build, test, start, dev, publish and more.</li>
-      <li>Moves Maven and Gradle projects to jpm with <code>jpm import</code>.</li>
+      <li>Moves Maven and Gradle projects to jpm with <code>jpm import</code>: review and edit the manifests first, switch to jpm's layout, delete the old build, and find what still uses Gradle or Maven.</li>
       <li>Creates jpm projects and modules: jpm is a build system in the Java New Project and New Module wizards, and new modules join the jpm workspace they are created in.</li>
     </ul>
     ]]></description>
@@ -39,6 +39,21 @@
                     factoryClass="dev.jpm.intellij.JpmToolWindowFactory"/>
 
         <configurationType implementation="dev.jpm.intellij.JpmConfigurationType"/>
+
+        <psi.referenceContributor language="JSON" implementation="dev.jpm.intellij.JpmManifestReferenceContributor"/>
+        <referencesSearch implementation="dev.jpm.intellij.JpmManifestReferencesSearcher"/>
+        <codeInsight.declarativeInlayProvider language="JSON" implementationClass="dev.jpm.intellij.JpmResolvedVersionHints"
+                                              isEnabledByDefault="true" group="VALUES_GROUP" providerId="jpm.resolved.versions"
+                                              bundle="messages.JpmBundle" nameKey="inlay.resolved.name"
+                                              descriptionKey="inlay.resolved.description"/>
+        <externalAnnotator language="JSON" implementationClass="dev.jpm.intellij.JpmCheckAnnotator"/>
+        <completion.contributor language="JSON" implementationClass="dev.jpm.intellij.JpmVersionCompletion" order="first"/>
+        <localInspection language="JSON" shortName="JpmNewerVersion" displayName="A dependency with a newer release"
+                         groupName="jpm" enabledByDefault="true" level="WEAK WARNING"
+                         implementationClass="dev.jpm.intellij.JpmNewerVersionInspection"/>
+        <localInspection language="JSON" shortName="JpmMissingPath" displayName="A path in project.jsonc that does not exist"
+                         groupName="jpm" enabledByDefault="true" level="WARNING"
+                         implementationClass="dev.jpm.intellij.JpmMissingPathInspection"/>
     </extensions>
 
     <extensions defaultExtensionNs="JavaScript.JsonSchema">

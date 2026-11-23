@@ -84,6 +84,13 @@ class JpmSchemaTest : BasePlatformTestCase() {
     }
 
 
+    fun testHoveringAFieldShowsItsDescription() {
+        myFixture.configureByText(Jpm.MANIFEST, "{ \"name\": \"demo\", \"ja<caret>va\": \"21\" }")
+        val element = myFixture.file.findElementAt(myFixture.caretOffset)
+        val doc = com.jetbrains.jsonSchema.impl.JsonSchemaDocumentationProvider().generateDoc(element, element)
+        assertTrue(doc.orEmpty(), doc.orEmpty().contains("The JDK the project builds with."))
+    }
+
     companion object {
         private val SCHEMA = """
             {
@@ -94,7 +101,7 @@ class JpmSchemaTest : BasePlatformTestCase() {
               "properties": {
                 "${'$'}schema": { "type": "string" },
                 "name": { "type": "string" },
-                "java": { "type": "string" },
+                "java": { "type": "string", "description": "The JDK the project builds with." },
                 "runtime": { "type": "object", "additionalProperties": { "type": "string" } }
               }
             }

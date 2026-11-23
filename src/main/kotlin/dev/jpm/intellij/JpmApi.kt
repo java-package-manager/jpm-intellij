@@ -59,6 +59,36 @@ object JpmApi {
     fun extension(e: dev.jpm.api.model.Extension) = JpmExtensionInfo(e.name(), e.source(), e.version(), e.description(),
         e.commands().map { JpmExtensionCommand(it.name(), it.description()) })
 
+    /**
+     * The versions of these Maven dependencies, oldest first, and the newest release of each, from jpm's
+     * `dependencies/versions` (protocol 1.1). Empty when this jpm does not have it.
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun versions(dir: Path, keys: List<String>): Map<String, JpmVersions.Known> = connect(dir) { client ->
+        if (!client.supports("dependencies/versions") || keys.isEmpty()) return@connect emptyMap()
+        val r = try {
+            client.call("dependencies/versions", mapOf("dir" to dir.toAbsolutePath().toString(), "keys" to keys))
+        } catch (e: JpmError) {
+            return@connect emptyMap()
+        }
+        val out = LinkedHashMap<String, JpmVersions.Known>()
+        (r["versions"] as? Map<String, Any?>)?.forEach { (k, v) ->
+            val m = v as? Map<String, Any?> ?: return@forEach
+            out[k] = JpmVersions.Known((m["versions"] as? List<Any?>).orEmpty().map { it.toString() }, m["latest"]?.toString())
+        }
+        out
+    }
+
+    /** jpm's quick checks of the project at [dir] (no compiling, no tests): its problems. */
+    fun check(dir: Path, checks: List<String>): List<dev.jpm.api.model.Problem> = connect(dir) { client ->
+        try {
+            client.check(dir, checks, false).problems()
+        } catch (e: JpmError) {
+            val p = e.problem() ?: throw JpmSync.LoadException(describe(e))
+            listOf(p)
+        }
+    }
+
     /** The JSON Schema of project.jsonc that the installed jpm reads, as JSON text. */
     fun manifestSchema(dir: Path): String = connect(dir) { client -> dev.jpm.api.json.Jsonc.write(client.manifestSchema()) }
 
@@ -111,6 +141,16 @@ object JpmApi {
             }
         }
         ideDependencies = cp?.let { ideDependencies(m, it) }.orEmpty()
+        graph = cp?.let { graph(it) }.orEmpty()
+    }
+
+    /** Every package on the module's classpaths with its version and the packages it depends on. */
+    fun graph(cp: Classpaths): Map<String, JpmGraphNode> {
+        val out = LinkedHashMap<String, JpmGraphNode>()
+        for (p in cp.compile() + cp.runtime() + cp.testCompile() + cp.testRuntime() + cp.processor()) {
+            if (p.id() !in out) out[p.id()] = JpmGraphNode(p.version(), p.dependencies().orEmpty())
+        }
+        return out
     }
 
     /**
