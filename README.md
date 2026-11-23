@@ -27,7 +27,9 @@ up: open a folder with a `project.jsonc` and it is ready to code in, with nothin
   warning. A dependency whose version is a range shows what `project.lock` resolved it to next to it. Versions
   complete with what the repositories have, newest first, and a dependency with a newer release is marked,
   with fixes that write the new version or run `jpm update <dependency> --latest` (needs jpm 0.13, which
-  answers `dependencies/versions`). When the file is
+  answers `dependencies/versions`). Dependency keys complete too: typing `org.example:mo` or a word such as
+  `guava` offers the matching coordinates, from jpm's download cache first and then Maven Central's search, each
+  with its newest version (needs a jpm that answers `dependencies/search`, protocol 1.2). When the file is
   saved, jpm's own warnings and errors about the manifest, its dependencies and its license (what `jpm check`
   reports) are highlighted at the line they are about.
 - **Nested projects.** Every jpm project in the opened folder is loaded: the folder's own, projects nested

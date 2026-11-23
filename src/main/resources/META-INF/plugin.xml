@@ -48,6 +48,7 @@
                                               descriptionKey="inlay.resolved.description"/>
         <externalAnnotator language="JSON" implementationClass="dev.jpm.intellij.JpmCheckAnnotator"/>
         <completion.contributor language="JSON" implementationClass="dev.jpm.intellij.JpmVersionCompletion" order="first"/>
+        <completion.contributor language="JSON" implementationClass="dev.jpm.intellij.JpmCoordinateCompletion" order="first"/>
         <localInspection language="JSON" shortName="JpmNewerVersion" displayName="A dependency with a newer release"
                          groupName="jpm" enabledByDefault="true" level="WEAK WARNING"
                          implementationClass="dev.jpm.intellij.JpmNewerVersionInspection"/>

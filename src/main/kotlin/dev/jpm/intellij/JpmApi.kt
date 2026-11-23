@@ -79,6 +79,22 @@ object JpmApi {
         out
     }
 
+    /**
+     * Maven packages whose coordinates match [query], from jpm's `dependencies/search` (protocol 1.2): what jpm's
+     * cache has, then what Maven Central's search finds. Empty when this jpm does not have it or cannot search.
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun search(dir: Path, query: String, limit: Int): List<JpmCoordinates.Hit> = connect(dir) { client ->
+        if (!client.supports("dependencies/search")) return@connect emptyList()
+        val r = try {
+            client.call("dependencies/search", mapOf("query" to query, "limit" to limit))
+        } catch (e: JpmError) {
+            return@connect emptyList()
+        }
+        (r["results"] as? List<Any?>).orEmpty().mapNotNull { it as? Map<String, Any?> }
+            .mapNotNull { m -> m["key"]?.toString()?.let { JpmCoordinates.Hit(it, m["latest"]?.toString()) } }
+    }
+
     /** jpm's quick checks of the project at [dir] (no compiling, no tests): its problems. */
     fun check(dir: Path, checks: List<String>): List<dev.jpm.api.model.Problem> = connect(dir) { client ->
         try {
