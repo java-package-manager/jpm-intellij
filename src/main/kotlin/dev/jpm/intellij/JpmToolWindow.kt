@@ -52,7 +52,7 @@ private sealed class Item(val label: String, val icon: Icon?) {
         Item(label, AllIcons.Nodes.ConfigFolder)
     class ModuleNode(label: String, val version: String?) : Item(label, AllIcons.Nodes.Module)
     class ProjectNode(label: String, val path: String) : Item(label, JpmIcons.Jpm)
-    class Dependency(label: String, val version: String?, val scope: String?) : Item(label, AllIcons.Nodes.PpLib)
+    class Dependency(label: String, val version: String?, val scope: String?, val dir: Path? = null) : Item(label, AllIcons.Nodes.PpLib)
     class Message(label: String) : Item(label, null)
 }
 
@@ -90,6 +90,18 @@ private class JpmToolWindowPanel(private val project: Project) : SimpleToolWindo
 
             override fun update(e: AnActionEvent) {
                 e.presentation.isEnabled = selected() is Item.Command
+            }
+
+            override fun getActionUpdateThread() = ActionUpdateThread.EDT
+        })
+        group.add(object : DumbAwareAction("Why Is It Here?", "Show how the project gets the selected dependency (jpm why)", AllIcons.Actions.Find) {
+            override fun actionPerformed(e: AnActionEvent) {
+                val dep = selected() as? Item.Dependency ?: return
+                JpmConfigurationType.run(project, listOf("why", dep.label), dep.dir)
+            }
+
+            override fun update(e: AnActionEvent) {
+                e.presentation.isEnabled = (selected() as? Item.Dependency)?.label?.startsWith("workspace:") == false
             }
 
             override fun getActionUpdateThread() = ActionUpdateThread.EDT
@@ -168,6 +180,12 @@ private class JpmToolWindowPanel(private val project: Project) : SimpleToolWindo
         if (infos != null) TreeUtil.expand(tree, if (infos.size == 1) 2 else 3)
     }
 
+    private fun addLine(line: JpmDependencyTree.Line, parent: DefaultMutableTreeNode, dir: Path) {
+        val n = DefaultMutableTreeNode(Item.Dependency(line.id, line.version, if (line.repeated) "(shown above)" else null, dir))
+        parent.add(n)
+        for (c in line.children) addLine(c, n, dir)
+    }
+
     private fun fill(info: JpmProjectInfo, top: DefaultMutableTreeNode) {
         fun node(item: Item, parent: DefaultMutableTreeNode = top) = DefaultMutableTreeNode(item).also { parent.add(it) }
         fun task(t: JpmTask, parent: DefaultMutableTreeNode) = node(Item.Command(t.label, t.args, t.hint, t.dir), parent)
@@ -193,7 +211,13 @@ private class JpmToolWindowPanel(private val project: Project) : SimpleToolWindo
                 val inScope = declared.filter { (it.scope ?: "runtime") == scope }
                 if (inScope.isEmpty()) continue
                 val g = node(Item.Group(scope, AllIcons.Nodes.Folder), mod)
-                for (d in inScope) node(Item.Dependency(d.key, d.resolved ?: d.spec, null), g)
+                val graph = m.graph.orEmpty()
+                val seen = HashSet<String>()
+                for (d in inScope) {
+                    val dep = node(Item.Dependency(d.key, d.resolved ?: d.spec, null, Path.of(m.dir)), g)
+                    val id = if (d.kind == "workspace") "workspace:" + d.key.substringAfter("workspace:") else d.key
+                    for (child in JpmDependencyTree.below(graph, id, seen).children) addLine(child, dep, Path.of(m.dir))
+                }
             }
         }
     }
@@ -225,6 +249,7 @@ private class JpmToolWindowPanel(private val project: Project) : SimpleToolWindo
                     icon = item.icon
                     append(item.label)
                     item.version?.let { append("  $it", SimpleTextAttributes.GRAYED_ATTRIBUTES) }
+                    item.scope?.let { append("  $it", SimpleTextAttributes.GRAYED_ITALIC_ATTRIBUTES) }
                 }
                 is Item.Message -> {
                     icon = AllIcons.General.Warning

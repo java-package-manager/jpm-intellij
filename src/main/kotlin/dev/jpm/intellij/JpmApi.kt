@@ -141,6 +141,16 @@ object JpmApi {
             }
         }
         ideDependencies = cp?.let { ideDependencies(m, it) }.orEmpty()
+        graph = cp?.let { graph(it) }.orEmpty()
+    }
+
+    /** Every package on the module's classpaths with its version and the packages it depends on. */
+    fun graph(cp: Classpaths): Map<String, JpmGraphNode> {
+        val out = LinkedHashMap<String, JpmGraphNode>()
+        for (p in cp.compile() + cp.runtime() + cp.testCompile() + cp.testRuntime() + cp.processor()) {
+            if (p.id() !in out) out[p.id()] = JpmGraphNode(p.version(), p.dependencies().orEmpty())
+        }
+        return out
     }
 
     /**

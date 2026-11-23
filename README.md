@@ -44,7 +44,9 @@ up: open a folder with a `project.jsonc` and it is ready to code in, with nothin
   `extensions.publish` names repositories (one per repository), and `publish --local` always; and your
   scripts. In a workspace each module also gets its own tasks, run in its folder so jpm acts on that module
   only, next to its dependencies. Double-click to run; output goes to the Run window, where the command can
-  be rerun or stopped. Commands can also be saved as **jpm** run configurations.
+  be rerun or stopped. Commands can also be saved as **jpm** run configurations. Each module's dependencies expand
+  into the packages they bring in, as a tree (a package shown higher up is marked instead of expanded
+  again), and **Why Is It Here?** runs `jpm why` on the selected one.
 - **Run configurations** for every `main` entry (`jpm start`, `jpm start <entry>`) and every script
   (`jpm run <script>`), named after their module in a workspace, and kept in step with `project.jsonc` on
   every reload. Edit one and it becomes yours: it is no longer updated or removed. Settings can turn them off.
