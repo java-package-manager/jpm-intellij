@@ -21,7 +21,8 @@ import com.intellij.util.ProcessingContext
 /**
  * What the values in project.jsonc name, as references: ctrl+click goes there, and renaming or moving it updates the
  * manifest. Classes (`main`, `defineClass`), files and folders (`workspace`, `sources`, `resources`, `patches`,
- * script files), packages (`relocate`), scripts (`hooks`) and the license file (`license`).
+ * script files), packages (`relocate`), scripts (`hooks`), the license file (`license`), the JDK (`java`), the resources
+ * a `filter` glob matches, the library of a dependency or exclusion, and the define a dependency declares.
  */
 class JpmManifestReferenceContributor : PsiReferenceContributor() {
     override fun registerReferenceProviders(registrar: PsiReferenceRegistrar) {
@@ -88,6 +89,11 @@ object JpmManifest {
             isPath(path, value) -> FileReferenceSet(value, literal, inner, null, true).allReferences.map { it as PsiReference }.toTypedArray()
             path.size == 2 && path[0] == "hooks" -> arrayOf(ScriptReference(literal))
             path == listOf("license") -> arrayOf(LicenseReference(literal))
+            path == listOf("java") -> arrayOf(JdkReference(literal))
+            path == listOf("filter", "#") -> arrayOf(FilterReference(literal))
+            isDependencyKey(path) || isExclusion(path) -> arrayOf(LibraryReference(literal))
+            path.size >= 3 && path[0] == "define" && path[1].contains(':') && (path.size == 3 || path.size == 4 && path[3] == "@key") ->
+                arrayOf(DependencyDefineReference(literal, path[1], path[2]))
             else -> PsiReference.EMPTY_ARRAY
         }
     }
@@ -116,6 +122,141 @@ object JpmManifest {
         }
 
         override fun handleElementRename(newElementName: String): PsiElement = element
+    }
+
+    private val SCOPES = setOf("runtime", "dev", "test")
+
+    private fun isDependencyKey(path: List<String>) = path.size == 3 && path[0] in SCOPES && path[2] == "@key"
+
+    private fun isExclusion(path: List<String>) = path == listOf("exclude", "#") || path.size == 4 && path[0] in SCOPES && path[2] == "exclude" && path[3] == "#"
+
+    private fun range(literal: JsonStringLiteral) = TextRange(1, maxOf(1, literal.textLength - 1))
+
+    /** The IntelliJ module the manifest belongs to. */
+    private fun module(literal: JsonStringLiteral): com.intellij.openapi.module.Module? {
+        val file = literal.containingFile.originalFile.virtualFile ?: return null
+        return com.intellij.openapi.module.ModuleUtilCore.findModuleForFile(file, literal.project)
+    }
+
+    /** The jpm module whose manifest this is, as jpm last reported it. */
+    private fun jpmModule(literal: JsonStringLiteral): JpmModuleInfo? {
+        val parent = literal.containingFile.originalFile.virtualFile?.parent ?: return null
+        val dir = parent.fileSystem.getNioPath(parent) ?: return null
+        val infos = literal.project.getService(JpmSync::class.java)?.infos ?: return null
+        return infos.asSequence().flatMap { it.modules }.firstOrNull { runCatching { java.nio.file.Path.of(it.dir).toRealPath() == dir.toRealPath() }.getOrDefault(false) }
+    }
+
+    private fun directory(literal: JsonStringLiteral, file: com.intellij.openapi.vfs.VirtualFile?): PsiElement? =
+        file?.let { com.intellij.psi.PsiManager.getInstance(literal.project).findDirectory(it) }
+
+    /** The JDK the module builds with: its home folder. */
+    class JdkReference(literal: JsonStringLiteral) : PsiReferenceBase<JsonStringLiteral>(literal, range(literal), true) {
+        override fun resolve(): PsiElement? {
+            val home = jpmModule(element)?.javaHome?.let { com.intellij.openapi.vfs.LocalFileSystem.getInstance().findFileByNioFile(java.nio.file.Path.of(it)) }
+                ?: module(element)?.let { com.intellij.openapi.roots.ModuleRootManager.getInstance(it).sdk?.homeDirectory }
+            return directory(element, home)
+        }
+
+        override fun handleElementRename(newElementName: String): PsiElement = element
+    }
+
+    /** The resource files a `filter` glob matches, in the module's resource folders. */
+    class FilterReference(literal: JsonStringLiteral) : PsiReferenceBase.Poly<JsonStringLiteral>(literal, range(literal), true) {
+        override fun multiResolve(incompleteCode: Boolean): Array<com.intellij.psi.ResolveResult> {
+            val matcher = runCatching { java.nio.file.FileSystems.getDefault().getPathMatcher("glob:" + element.value) }.getOrNull()
+                ?: return com.intellij.psi.ResolveResult.EMPTY_ARRAY
+            val psi = com.intellij.psi.PsiManager.getInstance(element.project)
+            val out = ArrayList<com.intellij.psi.ResolveResult>()
+            for (root in resourceDirs(element)) {
+                com.intellij.openapi.vfs.VfsUtilCore.iterateChildrenRecursively(root, null) { f ->
+                    val rel = com.intellij.openapi.vfs.VfsUtilCore.getRelativePath(f, root)
+                    if (!f.isDirectory && rel != null && matcher.matches(java.nio.file.Path.of(rel))) psi.findFile(f)?.let { out.add(com.intellij.psi.PsiElementResolveResult(it)) }
+                    true
+                }
+            }
+            return out.toTypedArray()
+        }
+
+        override fun handleElementRename(newElementName: String): PsiElement = element
+
+        private fun resourceDirs(literal: JsonStringLiteral): List<com.intellij.openapi.vfs.VirtualFile> {
+            val dir = literal.containingFile.originalFile.virtualFile?.parent ?: return emptyList()
+            val reported = jpmModule(literal)?.resourceDir?.let { com.intellij.openapi.vfs.LocalFileSystem.getInstance().findFileByNioFile(java.nio.file.Path.of(it)) }
+            if (reported != null) return listOf(reported)
+            return listOf("src/assets", "src/main/resources").mapNotNull { dir.findFileByRelativePath(it) }
+        }
+    }
+
+    /** The library jpm made for a dependency (its jar, under External Libraries), or the workspace module it names. */
+    class LibraryReference(literal: JsonStringLiteral) : PsiReferenceBase<JsonStringLiteral>(literal, range(literal), true) {
+        override fun resolve(): PsiElement? {
+            val key = element.value
+            if (key.startsWith("workspace:")) return directory(element, workspaceModuleDir(element, key.removePrefix("workspace:")))
+            return directory(element, library(element, key)?.getFiles(com.intellij.openapi.roots.OrderRootType.CLASSES)?.firstOrNull())
+        }
+
+        override fun handleElementRename(newElementName: String): PsiElement = element
+    }
+
+    /** The jpm library for a dependency key: named "jpm: <key>:<version>" (see JpmProjectSetup). */
+    fun library(literal: JsonStringLiteral, key: String): com.intellij.openapi.roots.libraries.Library? {
+        val prefix = "jpm: $key:"
+        fun matches(name: String?) = name != null && (name.startsWith(prefix) && !name.substring(prefix.length).contains(':') || name == "jpm: $key")
+        com.intellij.openapi.roots.libraries.LibraryTablesRegistrar.getInstance().getLibraryTable(literal.project).libraries.firstOrNull { matches(it.name) }?.let { return it }
+        val modules = module(literal)?.let { listOf(it) }.orEmpty() + com.intellij.openapi.module.ModuleManager.getInstance(literal.project).modules
+        for (m in modules) {
+            var found: com.intellij.openapi.roots.libraries.Library? = null
+            com.intellij.openapi.roots.OrderEnumerator.orderEntries(m).forEachLibrary { if (matches(it.name)) { found = it; false } else true }
+            if (found != null) return found
+        }
+        return null
+    }
+
+    private fun workspaceModuleDir(literal: JsonStringLiteral, name: String): com.intellij.openapi.vfs.VirtualFile? {
+        val infos = literal.project.getService(JpmSync::class.java)?.infos.orEmpty()
+        infos.asSequence().flatMap { it.modules }.firstOrNull { it.name == name }
+            ?.let { com.intellij.openapi.vfs.LocalFileSystem.getInstance().findFileByNioFile(java.nio.file.Path.of(it.dir)) }?.let { return it }
+        var dir = literal.containingFile.originalFile.virtualFile?.parent
+        while (dir != null) {
+            val manifest = dir.findChild(Jpm.MANIFEST)
+            if (manifest != null) {
+                val psi = com.intellij.psi.PsiManager.getInstance(literal.project).findFile(manifest) as? JsonFile
+                val workspace = (psi?.topLevelValue as? JsonObject)?.findProperty("workspace")?.value as? JsonArray
+                for (entry in workspace?.valueList.orEmpty()) {
+                    val sub = (entry as? JsonStringLiteral)?.value?.let { dir!!.findFileByRelativePath(it) } ?: continue
+                    val subManifest = sub.findChild(Jpm.MANIFEST)?.let { com.intellij.psi.PsiManager.getInstance(literal.project).findFile(it) } as? JsonFile
+                    val subName = ((subManifest?.topLevelValue as? JsonObject)?.findProperty("name")?.value as? JsonStringLiteral)?.value
+                    if (subName == name || subName == null && sub.name == name) return sub
+                }
+            }
+            dir = dir.parent
+        }
+        return null
+    }
+
+    /** Where a dependency declares the define a `define` entry for it sets: the define in the dependency's own project.jsonc. */
+    class DependencyDefineReference(literal: JsonStringLiteral, private val key: String, private val name: String) :
+        PsiReferenceBase<JsonStringLiteral>(literal, range(literal), true) {
+        override fun resolve(): PsiElement? {
+            val manifest = dependencyManifest(element, key) ?: return null
+            val defines = (manifest.topLevelValue as? JsonObject)?.findProperty("define")?.value as? JsonObject ?: return null
+            return defines.findProperty(name)
+        }
+
+        override fun handleElementRename(newElementName: String): PsiElement = element
+    }
+
+    /** The project.jsonc of a source dependency: a workspace module, or a Git dependency's checkout (found from its library's sources). */
+    fun dependencyManifest(literal: JsonStringLiteral, key: String): JsonFile? {
+        val psi = com.intellij.psi.PsiManager.getInstance(literal.project)
+        val dir = if (key.startsWith("workspace:")) workspaceModuleDir(literal, key.removePrefix("workspace:")) else {
+            val lib = library(literal, key)
+            val roots = lib?.getFiles(com.intellij.openapi.roots.OrderRootType.SOURCES).orEmpty().toList()
+            roots.asSequence().map { com.intellij.openapi.vfs.VfsUtilCore.getVirtualFileForJar(it) ?: it }
+                .flatMap { generateSequence(it) { f -> f.parent }.take(4) }
+                .firstOrNull { it.isDirectory && it.findChild(Jpm.MANIFEST) != null }
+        }
+        return dir?.findChild(Jpm.MANIFEST)?.let { psi.findFile(it) } as? JsonFile
     }
 
     val LICENSE_FILES = listOf("LICENSE", "LICENSE.md", "LICENSE.txt", "LICENCE", "LICENCE.md", "LICENCE.txt", "COPYING", "COPYING.md", "COPYING.txt",

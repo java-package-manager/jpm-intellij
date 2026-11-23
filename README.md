@@ -20,7 +20,9 @@ up: open a folder with a `project.jsonc` and it is ready to code in, with nothin
   line: unknown fields, wrong dependency keys, misspelled options and invalid values are underlined as you
   type. Ctrl+click on a value goes to what it names: the class of `main` and `defineClass`, the folders of
   `workspace`, `sources` and `resources`, patch and script files, the script a hook runs, the packages
-  `relocate` moves, and the license file. Renaming or moving those updates `project.jsonc`. A value that names a
+  `relocate` moves, the license file, the JDK of `java`, the resources a `filter` glob matches, the library
+  (under External Libraries) of a dependency or an `exclude` entry, the module of a `workspace:` dependency, and,
+  for a value in `define` for a dependency, the define in the dependency's own `project.jsonc`. Renaming or moving those updates `project.jsonc`. A value that names a
   file or folder that does not exist (workspace modules, `sources`, `resources`, patches, script files) gets a
   warning. A dependency whose version is a range shows what `project.lock` resolved it to next to it. Versions
   complete with what the repositories have, newest first, and a dependency with a newer release is marked,
