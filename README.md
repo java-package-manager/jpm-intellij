@@ -22,7 +22,7 @@ up: open a folder with a `project.jsonc` and it is ready to code in, with nothin
   `workspace`, `sources` and `resources`, patch and script files, the script a hook runs, the packages
   `relocate` moves, and the license file. Renaming or moving those updates `project.jsonc`. A value that names a
   file or folder that does not exist (workspace modules, `sources`, `resources`, patches, script files) gets a
-  warning.
+  warning. A dependency whose version is a range shows what `project.lock` resolved it to next to it.
 - **Nested projects.** Every jpm project in the opened folder is loaded: the folder's own, projects nested
   inside it (test fixtures, examples), and projects in subfolders of a folder that is not one (a monorepo, a
   backend next to a frontend). A workspace's modules load with their workspace. Each project gets its own

@@ -42,6 +42,10 @@
 
         <psi.referenceContributor language="JSON" implementation="dev.jpm.intellij.JpmManifestReferenceContributor"/>
         <referencesSearch implementation="dev.jpm.intellij.JpmManifestReferencesSearcher"/>
+        <codeInsight.declarativeInlayProvider language="JSON" implementationClass="dev.jpm.intellij.JpmResolvedVersionHints"
+                                              isEnabledByDefault="true" group="VALUES_GROUP" providerId="jpm.resolved.versions"
+                                              bundle="messages.JpmBundle" nameKey="inlay.resolved.name"
+                                              descriptionKey="inlay.resolved.description"/>
         <localInspection language="JSON" shortName="JpmMissingPath" displayName="A path in project.jsonc that does not exist"
                          groupName="jpm" enabledByDefault="true" level="WARNING"
                          implementationClass="dev.jpm.intellij.JpmMissingPathInspection"/>
