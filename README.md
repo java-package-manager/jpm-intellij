@@ -37,8 +37,13 @@ up: open a folder with a `project.jsonc` and it is ready to code in, with nothin
   only, next to its dependencies. Double-click to run; output goes to the Run window, where the command can
   be rerun or stopped. Commands can also be saved as **jpm** run configurations.
 - **Maven and Gradle migration.** Opening a Maven or Gradle project offers to move it to jpm (also
-  **Tools | Migrate to jpm…**): it shows what `jpm import --dry-run` would write and what does not carry
-  over, then runs `jpm import`. The Maven or Gradle files are not touched. See
+  **Tools | Migrate to jpm…**). The dialog lists what does not carry over first, then shows each
+  `project.jsonc` that `jpm import` would write in an editor, highlighted, to change before it is written.
+  It can also move the sources from the Maven layout to jpm's (`src/`, `src/assets/`, `test/`, `test/assets/`)
+  and drop `"layout": "maven"`, and delete the old build (build files, wrappers, `gradle/`, `build/` and
+  `target/`); by default the Maven or Gradle files are not touched. Afterwards it lists what still uses
+  Gradle or Maven, such as CI workflows, Dockerfiles, scripts, Renovate or Dependabot settings, `.gitignore`
+  entries and run configurations; double-click one to open it. See
   [MIGRATION.md](https://github.com/java-package-manager/jpm/blob/main/MIGRATION.md).
 - **New projects and modules.** jpm is a build system in the Java wizard, next to IntelliJ, Maven and
   Gradle (**File | New | Project** or **File | New | Module**, Java, Build system: jpm), and **File | New |
