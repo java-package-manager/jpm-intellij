@@ -20,6 +20,9 @@ class JpmSettingsState : BaseState() {
 
     /** Reload the project when project.jsonc or project.lock change. */
     var autoReload by property(true)
+
+    /** Keep a run configuration for every main entry and script. */
+    var runConfigurations by property(true)
 }
 
 @State(name = "JpmSettings", storages = [Storage("jpm.xml")])
@@ -42,6 +45,10 @@ class JpmConfigurable : BoundConfigurable("jpm") {
             row {
                 checkBox("Reload the project when project.jsonc or project.lock change")
                     .bindSelected({ state.autoReload }, { state.autoReload = it })
+            }
+            row {
+                checkBox("Make a run configuration for every main entry and script")
+                    .bindSelected({ state.runConfigurations }, { state.runConfigurations = it })
             }
         }
     }

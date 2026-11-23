@@ -36,6 +36,9 @@ up: open a folder with a `project.jsonc` and it is ready to code in, with nothin
   scripts. In a workspace each module also gets its own tasks, run in its folder so jpm acts on that module
   only, next to its dependencies. Double-click to run; output goes to the Run window, where the command can
   be rerun or stopped. Commands can also be saved as **jpm** run configurations.
+- **Run configurations** for every `main` entry (`jpm start`, `jpm start <entry>`) and every script
+  (`jpm run <script>`), named after their module in a workspace, and kept in step with `project.jsonc` on
+  every reload. Edit one and it becomes yours: it is no longer updated or removed. Settings can turn them off.
 - **Maven and Gradle migration.** Opening a Maven or Gradle project offers to move it to jpm (also
   **Tools | Migrate to jpm…**). The dialog lists what does not carry over first, then shows each
   `project.jsonc` that `jpm import` would write in an editor, highlighted, to change before it is written.
