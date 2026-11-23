@@ -39,6 +39,9 @@
                     factoryClass="dev.jpm.intellij.JpmToolWindowFactory"/>
 
         <configurationType implementation="dev.jpm.intellij.JpmConfigurationType"/>
+
+        <psi.referenceContributor language="JSON" implementation="dev.jpm.intellij.JpmManifestReferenceContributor"/>
+        <referencesSearch implementation="dev.jpm.intellij.JpmManifestReferencesSearcher"/>
     </extensions>
 
     <extensions defaultExtensionNs="JavaScript.JsonSchema">
