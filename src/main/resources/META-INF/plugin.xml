@@ -46,6 +46,7 @@
                                               isEnabledByDefault="true" group="VALUES_GROUP" providerId="jpm.resolved.versions"
                                               bundle="messages.JpmBundle" nameKey="inlay.resolved.name"
                                               descriptionKey="inlay.resolved.description"/>
+        <externalAnnotator language="JSON" implementationClass="dev.jpm.intellij.JpmCheckAnnotator"/>
         <localInspection language="JSON" shortName="JpmMissingPath" displayName="A path in project.jsonc that does not exist"
                          groupName="jpm" enabledByDefault="true" level="WARNING"
                          implementationClass="dev.jpm.intellij.JpmMissingPathInspection"/>

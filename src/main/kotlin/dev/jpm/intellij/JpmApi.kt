@@ -59,6 +59,16 @@ object JpmApi {
     fun extension(e: dev.jpm.api.model.Extension) = JpmExtensionInfo(e.name(), e.source(), e.version(), e.description(),
         e.commands().map { JpmExtensionCommand(it.name(), it.description()) })
 
+    /** jpm's quick checks of the project at [dir] (no compiling, no tests): its problems. */
+    fun check(dir: Path, checks: List<String>): List<dev.jpm.api.model.Problem> = connect(dir) { client ->
+        try {
+            client.check(dir, checks, false).problems()
+        } catch (e: JpmError) {
+            val p = e.problem() ?: throw JpmSync.LoadException(describe(e))
+            listOf(p)
+        }
+    }
+
     /** The JSON Schema of project.jsonc that the installed jpm reads, as JSON text. */
     fun manifestSchema(dir: Path): String = connect(dir) { client -> dev.jpm.api.json.Jsonc.write(client.manifestSchema()) }
 
