@@ -13,10 +13,10 @@ class JpmCheckAnnotatorTest : BasePlatformTestCase() {
         }
         val dir = Files.createTempDirectory("jpm-check")
         val manifest = dir.resolve(Jpm.MANIFEST)
-        Files.writeString(manifest, "{\n  \"name\": \"app\",\n  \"version\": \"1.0.0\",\n  \"license\": \"MITT\"\n}\n")
+        Files.writeString(manifest, "{\n  \"name\": \"app\",\n  \"version\": \"1.0.0\",\n  \"runtim\": {}\n}\n")
         val found = JpmCheckAnnotator().doAnnotate(JpmCheckAnnotator.Input(manifest, 1))
-        val license = found.firstOrNull { it.message.contains("MITT") }
-        assertNotNull(found.joinToString { "${it.line}: ${it.message}" }, license)
-        assertEquals(4, license!!.line)
+        val unknown = found.firstOrNull { it.message.contains("runtim") }
+        assertNotNull(found.joinToString { "${it.line}: ${it.message}" }, unknown)
+        assertEquals(4, unknown!!.line)
     }
 }
