@@ -73,6 +73,11 @@ up: open a folder with a `project.jsonc` and it is ready to code in, with nothin
   Project | jpm** is there too; both run `jpm init`, and there is no JDK to pick. A new module inside a jpm
   workspace is added to the workspace's `"workspace"` list (comments and layout of `project.jsonc` are kept);
   elsewhere it becomes a jpm project of its own, which the plugin loads as a nested project.
+- **Updates.** When the IDE starts, the plugin asks jpm whether it has a newer release (`jpm upgrade --check`)
+  and whether the global extensions have newer releases in their ranges (`jpm update -g --check`, from jpm
+  0.17), and offers them in a notification. With **Install jpm upgrades and global extension updates by
+  themselves** on in the jpm settings, it installs them instead. The **Release channel** setting **Canary**
+  takes jpm's prereleases too, like `jpm upgrade --canary`.
 
 ## Installing
 

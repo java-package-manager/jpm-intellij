@@ -13,9 +13,10 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
 
-/** Loads jpm projects when they open, and offers to migrate Maven and Gradle projects. */
+/** Loads jpm projects when they open, offers to migrate Maven and Gradle projects, and checks jpm for updates. */
 class JpmStartup : ProjectActivity {
     override suspend fun execute(project: Project) {
+        JpmUpdates.checkOnStartup(project)
         val dir = Jpm.baseDir(project) ?: return
         if (JpmSync.get(project).roots().isNotEmpty()) {
             JpmSync.get(project).reload()

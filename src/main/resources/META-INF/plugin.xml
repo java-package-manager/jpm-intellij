@@ -13,6 +13,7 @@
       <li>A jpm tool window with the project's tasks and scripts: build, test, start, dev, publish and more.</li>
       <li>Moves Maven and Gradle projects to jpm with <code>jpm import</code>: review and edit the manifests first, switch to jpm's layout, delete the old build, and find what still uses Gradle or Maven.</li>
       <li>Formats Java files with <code>jpm format</code> when they are saved, when turned on in the jpm settings.</li>
+      <li>Checks for jpm upgrades and global extension updates when the IDE starts, and offers or installs them; a setting takes jpm's canary prereleases too.</li>
       <li>Creates jpm projects and modules: jpm is a build system in the Java New Project and New Module wizards, and new modules join the jpm workspace they are created in.</li>
     </ul>
     ]]></description>

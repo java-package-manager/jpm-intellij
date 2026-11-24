@@ -8,6 +8,8 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.ui.DialogPanel
+import com.intellij.ui.SimpleListCellRenderer
+import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.columns
@@ -26,6 +28,12 @@ class JpmSettingsState : BaseState() {
 
     /** Run `jpm format` on Java files when they are saved. */
     var formatOnSave by property(false)
+
+    /** Install jpm upgrades and global extension updates found when the IDE starts, instead of offering them. */
+    var autoUpdate by property(false)
+
+    /** Take jpm's prereleases too (`jpm upgrade --canary`). */
+    var canary by property(false)
 }
 
 @State(name = "JpmSettings", storages = [Storage("jpm.xml")])
@@ -57,6 +65,18 @@ class JpmConfigurable : BoundConfigurable("jpm") {
                 checkBox("Run jpm format on Java files when they are saved")
                     .bindSelected({ state.formatOnSave }, { state.formatOnSave = it })
                     .comment("Needs jpm-format: jpm add -g github:java-package-manager/jpm-format")
+            }
+            group("Updates") {
+                row {
+                    checkBox("Install jpm upgrades and global extension updates by themselves")
+                        .bindSelected({ state.autoUpdate }, { state.autoUpdate = it })
+                        .comment("When the IDE starts, the plugin checks for them; when this is off, it offers them in a notification")
+                }
+                row("Release channel:") {
+                    comboBox(listOf(false, true), SimpleListCellRenderer.create("") { if (it) "Canary (prereleases)" else "Stable" })
+                        .bindItem({ state.canary }, { state.canary = it ?: false })
+                        .comment("Canary takes jpm's prereleases too, like jpm upgrade --canary")
+                }
             }
         }
     }
