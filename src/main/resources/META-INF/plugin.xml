@@ -12,6 +12,7 @@
       <li>Reloads by itself when <code>project.jsonc</code> or <code>project.lock</code> change.</li>
       <li>A jpm tool window with the project's tasks and scripts: build, test, start, dev, publish and more.</li>
       <li>Moves Maven and Gradle projects to jpm with <code>jpm import</code>: review and edit the manifests first, switch to jpm's layout, delete the old build, and find what still uses Gradle or Maven.</li>
+      <li>Formats Java files with <code>jpm format</code> when they are saved, when turned on in the jpm settings.</li>
       <li>Creates jpm projects and modules: jpm is a build system in the Java New Project and New Module wizards, and new modules join the jpm workspace they are created in.</li>
     </ul>
     ]]></description>
@@ -37,6 +38,8 @@
 
         <toolWindow id="jpm" anchor="right" icon="dev.jpm.intellij.JpmIcons.ToolWindow"
                     factoryClass="dev.jpm.intellij.JpmToolWindowFactory"/>
+
+        <actionOnSave implementation="dev.jpm.intellij.JpmFormatOnSave"/>
 
         <configurationType implementation="dev.jpm.intellij.JpmConfigurationType"/>
 

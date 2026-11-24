@@ -63,6 +63,11 @@ up: open a folder with a `project.jsonc` and it is ready to code in, with nothin
   Gradle or Maven, such as CI workflows, Dockerfiles, scripts, Renovate or Dependabot settings, `.gitignore`
   entries and run configurations; double-click one to open it. See
   [MIGRATION.md](https://github.com/java-package-manager/jpm/blob/main/MIGRATION.md).
+- **Format on save.** With **Run jpm format on Java files when they are saved** on in the jpm settings, saving
+  a Java file in a jpm project formats it with `jpm format --stdin` (needs
+  [jpm-format](https://github.com/java-package-manager/jpm-format), `jpm add -g
+  github:java-package-manager/jpm-format`), with the project's own formatter settings. A file that does not
+  parse is saved as it is.
 - **New projects and modules.** jpm is a build system in the Java wizard, next to IntelliJ, Maven and
   Gradle (**File | New | Project** or **File | New | Module**, Java, Build system: jpm), and **File | New |
   Project | jpm** is there too; both run `jpm init`, and there is no JDK to pick. A new module inside a jpm

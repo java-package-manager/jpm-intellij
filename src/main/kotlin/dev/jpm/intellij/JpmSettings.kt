@@ -23,6 +23,9 @@ class JpmSettingsState : BaseState() {
 
     /** Keep a run configuration for every main entry and script. */
     var runConfigurations by property(true)
+
+    /** Run `jpm format` on Java files when they are saved. */
+    var formatOnSave by property(false)
 }
 
 @State(name = "JpmSettings", storages = [Storage("jpm.xml")])
@@ -49,6 +52,11 @@ class JpmConfigurable : BoundConfigurable("jpm") {
             row {
                 checkBox("Make a run configuration for every main entry and script")
                     .bindSelected({ state.runConfigurations }, { state.runConfigurations = it })
+            }
+            row {
+                checkBox("Run jpm format on Java files when they are saved")
+                    .bindSelected({ state.formatOnSave }, { state.formatOnSave = it })
+                    .comment("Needs jpm-format: jpm add -g github:java-package-manager/jpm-format")
             }
         }
     }
