@@ -1,8 +1,8 @@
 # Contributing to jpm-intellij
 
 jpm-intellij is the IntelliJ IDEA plugin for jpm. [AGENTS.md](AGENTS.md) has the same facts for AI agents;
-the plan is jpm's [ROADMAP.md](https://github.com/java-package-manager/jpm/blob/main/ROADMAP.md) (Milestone 4
-moves the plugin to jpm's client jar, Milestone 5 adds the migration UI and `project.jsonc` editing).
+what comes next is in [ROADMAP.md](ROADMAP.md), and jpm's own plan in its
+[ROADMAP.md](https://github.com/java-package-manager/jpm/blob/main/ROADMAP.md).
 
 ## Build, test, run
 

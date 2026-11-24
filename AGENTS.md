@@ -18,6 +18,7 @@ Facts for AI agents working on jpm-intellij. Reasons are in [CONTRIBUTING.md](CO
   `JpmProjectSetup.kt` load a project into the IDE, `JpmToolWindow.kt` and `JpmTasks.kt` are the tool
   window, `JpmMigration.kt` imports Maven and Gradle builds, the wizards create projects.
 - `src/main/resources/META-INF/plugin.xml`: extension points. `src/test/kotlin`: tests.
+- `ROADMAP.md`: what comes next; tick an item when a change finishes it.
 
 ## Rules that must not be broken
 
