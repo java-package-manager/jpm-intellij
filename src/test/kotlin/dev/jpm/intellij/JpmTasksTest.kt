@@ -35,14 +35,14 @@ class JpmTasksTest {
     @Test
     fun aBareProjectOffersOnlyWhatRuns() {
         val info = project(false, module("lib", "/p"))
-        assertEquals(listOf("build", "clean", "build --release", "build --bundle", "install", "update", "outdated"), labels(info))
+        assertEquals(listOf("build", "clean", "build --release", "build --bundle", "install", "update", "update --check"), labels(info))
     }
 
     @Test
     fun testsAndMainAddTheirTasks() {
         val info = project(false, module("app", "/p", main = mapOf("main" to "a.App"), tests = true))
         assertEquals(listOf("build", "test", "start", "dev", "clean", "build --release", "build --bundle", "build --native",
-            "install", "update", "outdated"), labels(info))
+            "install", "update", "update --check"), labels(info))
     }
 
     @Test
