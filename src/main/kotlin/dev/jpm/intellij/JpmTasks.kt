@@ -36,7 +36,7 @@ object JpmTasks {
         groups.add(JpmTaskGroup("Dependencies", listOf(
             JpmTask("install", listOf("install"), "resolve and download", dir),
             JpmTask("update", listOf("update"), "newest versions within the ranges", dir),
-            JpmTask("outdated", listOf("outdated"), "show newer versions", dir),
+            JpmTask("update --check", listOf("update", "--check"), "show newer versions, changing nothing", dir),
         )))
 
         for (e in info.extensionList) {
