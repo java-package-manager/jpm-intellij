@@ -19,7 +19,6 @@ class JpmModelTest {
         val libWithSources = pkg("g:lib", ", \"sources\": \"/r/g:lib-sources.jar\"")
         val load = """
             { "dir": "/p", "name": "demo", "version": "1.0.0", "workspace": false, "scripts": [{ "name": "format", "run": "x" }],
-              "extensions": { "publish": { "javadoc": true } },
               "modules": [{ "name": "demo", "dir": "/p", "layout": "jpm", "main": { "main": "demo.App" },
                 "folders": { "sources": ["/p/src"], "resources": ["/p/src/assets"], "tests": ["/p/test"], "testResources": ["/p/test/assets"],
                              "generatedSources": ["/p/.cache/gen"], "exclude": ["/p/.cache", "/p/dist"] },

@@ -44,9 +44,8 @@ up: open a folder with a `project.jsonc` and it is ready to code in, with nothin
 - **A jpm tool window** on the right, like Gradle's and Maven's, with the commands that can actually run:
   build, clean, release builds and the dependency commands always; test when there are tests; start and
   dev (one per entry point) and native builds when there is a `main`; bundles always (flat jars for modules
-  without a `main`, such as plugins); publish when
-  `extensions.publish` names repositories (one per repository), and `publish --local` always; and your
-  scripts. In a workspace each module also gets its own tasks, run in its folder so jpm acts on that module
+  without a `main`, such as plugins); the commands of the extensions the project can run (such as
+  `publish` from jpm-publish), as their manifests describe them; and your scripts. In a workspace each module also gets its own tasks, run in its folder so jpm acts on that module
   only, next to its dependencies. Double-click to run; output goes to the Run window, where the command can
   be rerun or stopped. Commands can also be saved as **jpm** run configurations. Each module's dependencies expand
   into the packages they bring in, as a tree (a package shown higher up is marked instead of expanded
