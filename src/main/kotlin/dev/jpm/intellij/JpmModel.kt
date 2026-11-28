@@ -8,8 +8,6 @@ class JpmProjectInfo {
     var version: String? = null
     var workspace: Boolean = false
     var scripts: List<String>? = null
-    /** Settings of jpm extensions by name, as in the root project.jsonc (e.g. "publish"). */
-    var extensions: Map<String, Any?>? = null
     var modules: List<JpmModuleInfo> = emptyList()
     /** The extensions this project can run: the ones it declares, then the global ones (jpm's extensions/list). */
     var extensionList: List<JpmExtensionInfo> = emptyList()
@@ -45,7 +43,6 @@ class JpmModuleInfo {
     var ideDependencies: List<JpmIdeDependency>? = null
     /** Every package on the module's classpaths with the packages it depends on, for the dependency tree. */
     var graph: Map<String, JpmGraphNode>? = null
-    var extensions: Map<String, Any?>? = null
 
     /** Whether the module has test sources; worked out by the plugin after loading, not reported by jpm. */
     @Transient

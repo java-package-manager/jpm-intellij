@@ -14,20 +14,18 @@ class JpmTasksTest {
     val tmp = TemporaryFolder()
 
     private fun module(name: String, dir: String, main: Map<String, String>? = null, tests: Boolean = false,
-                       extensions: Map<String, Any?>? = null, scripts: List<String>? = null) = JpmModuleInfo().apply {
+                       scripts: List<String>? = null) = JpmModuleInfo().apply {
         this.name = name
         this.dir = dir
         this.main = main
         this.hasTests = tests
-        this.extensions = extensions
         this.scripts = scripts
     }
 
-    private fun project(workspace: Boolean, vararg modules: JpmModuleInfo, extensions: Map<String, Any?>? = null) = JpmProjectInfo().apply {
+    private fun project(workspace: Boolean, vararg modules: JpmModuleInfo) = JpmProjectInfo().apply {
         projectDir = "/p"
         name = "p"
         this.workspace = workspace
-        this.extensions = extensions
         this.modules = modules.toList()
     }
 

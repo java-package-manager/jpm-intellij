@@ -121,7 +121,6 @@ object JpmApi {
         version = p.version()
         workspace = p.workspace()
         scripts = p.scripts().map { it.name() }
-        extensions = p.extensions()
         modules = p.modules().map { module(it, classpaths[it.name()]) }
     }
 
@@ -145,7 +144,6 @@ object JpmApi {
         javaHome = m.jdk().home()?.toString()
         javaError = m.jdk().error()
         release = m.jdk().release()
-        extensions = m.extensions()
         dependencies = m.dependencies().map { d ->
             JpmDependencyInfo().apply {
                 key = d.key()
